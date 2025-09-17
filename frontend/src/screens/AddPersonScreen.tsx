@@ -1,10 +1,11 @@
 import * as React from "react";
-import { Platform, ScrollView, View } from "react-native";
-import { Text, TextInput, Button, List, Card, IconButton } from "react-native-paper";
+import { ScrollView } from "react-native";
+import { Text, TextInput, Button } from "react-native-paper";
 import DateInput from "../components/inputs/DateInput";
 import SelectInput from "../components/inputs/SelectInput";
-import GiftIdeaModal, { GiftIdeaForm } from "../components/modals/GiftIdeaModal";
-import InteractionModal, { InteractionForm } from "../components/modals/InteractionModal";
+import EventsSection from "../components/sections/EventsSection";
+import GiftIdeasSection from "../components/sections/GiftIdeasSection";
+import InteractionsSection from "../components/sections/InteractionsSection";
 import { RELATIONSHIP_OPTIONS } from "../constants/options";
 import { useMutation } from "@apollo/client";
 import {
@@ -26,32 +27,22 @@ export default function AddPersonScreen({ navigation }: any) {
   // Using simple List.Section layout (no accordions) to match EditPerson screen
 
   const [currentEvents, setCurrentEvents] = React.useState<string[]>([]);
-  const [currentEventModalVisible, setCurrentEventModalVisible] = React.useState(false);
-  const [editCurrentIdx, setEditCurrentIdx] = React.useState<number | null>(null);
-  const [currentEventText, setCurrentEventText] = React.useState("");
+  // handled by EventsSection modals
 
   const [upcomingEvents, setUpcomingEvents] = React.useState<
     Array<{ title: string; date?: string; notes?: string }>
   >([]);
-  const [upcomingModalVisible, setUpcomingModalVisible] = React.useState(false);
-  const [editUpcomingIdx, setEditUpcomingIdx] = React.useState<number | null>(null);
-  const [newUpcomingTitle, setNewUpcomingTitle] = React.useState("");
-  const [newUpcomingDate, setNewUpcomingDate] = React.useState<string>("");
-  const [newUpcomingNotes, setNewUpcomingNotes] = React.useState("");
+  // handled by EventsSection modals
 
   const [giftIdeas, setGiftIdeas] = React.useState<
     Array<{ title: string; notes?: string; occasion?: string; status?: string; priority?: number }>
   >([]);
-  const [giftModalVisible, setGiftModalVisible] = React.useState(false);
-  const [editGiftIdx, setEditGiftIdx] = React.useState<number | null>(null);
-  const [giftForm, setGiftForm] = React.useState<GiftIdeaForm | undefined>(undefined);
+  // handled by GiftIdeasSection modal
 
   const [interactions, setInteractions] = React.useState<
     Array<{ summary: string; date?: string; channel?: string; location?: string }>
   >([]);
-  const [interModalVisible, setInterModalVisible] = React.useState(false);
-  const [editInterIdx, setEditInterIdx] = React.useState<number | null>(null);
-  const [interForm, setInterForm] = React.useState<InteractionForm | undefined>(undefined);
+  // handled by InteractionsSection modal
 
   const [createPerson, { loading, error }] = useMutation(CREATE_PERSON_MUTATION);
   const [createGiftIdea] = useMutation(CREATE_GIFT_IDEA_MUTATION);
@@ -171,174 +162,30 @@ export default function AddPersonScreen({ navigation }: any) {
         style={{ marginBottom: 12 }}
       />
 
-      <List.Section>
-        <List.Subheader>Events</List.Subheader>
-        <Button
-          onPress={() => {
-            setEditCurrentIdx(null);
-            setCurrentEventText("");
-            setCurrentEventModalVisible(true);
-          }}
-        >
-          Add current event
-        </Button>
-        {currentEvents.map((ce, idx) => (
-          <Card key={`${ce}-${idx}`} style={{ marginHorizontal: 8, marginTop: 8 }}>
-            <Card.Title
-              title={ce}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditCurrentIdx(idx);
-                      setCurrentEventText(currentEvents[idx]);
-                      setCurrentEventModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() => setCurrentEvents((arr) => arr.filter((_, i) => i !== idx))}
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
+      <EventsSection
+        currentEvents={currentEvents}
+        upcomingEvents={upcomingEvents}
+        onAddCurrent={(text) => setCurrentEvents((arr) => [...arr, text])}
+        onEditCurrent={(index, text) => setCurrentEvents((arr) => { const next = [...arr]; next[index] = text; return next; })}
+        onDeleteCurrent={(index) => setCurrentEvents((arr) => arr.filter((_, i) => i !== index))}
+        onAddUpcoming={(ev) => setUpcomingEvents((arr) => [...arr, { title: ev.title, date: ev.date || undefined, notes: ev.notes || undefined }])}
+        onEditUpcoming={(index, ev) => setUpcomingEvents((arr) => { const next = [...arr]; next[index] = { title: ev.title, date: ev.date || undefined, notes: ev.notes || undefined }; return next; })}
+        onDeleteUpcoming={(index) => setUpcomingEvents((arr) => arr.filter((_, i) => i !== index))}
+      />
 
-        <Button
-          onPress={() => {
-            setEditUpcomingIdx(null);
-            setNewUpcomingTitle("");
-            setNewUpcomingDate("");
-            setNewUpcomingNotes("");
-            setUpcomingModalVisible(true);
-          }}
-        >
-          Add upcoming event
-        </Button>
-        {upcomingEvents.map((ue, idx) => (
-          <Card key={`${ue.title}-${idx}`} style={{ marginHorizontal: 8, marginTop: 8 }}>
-            <Card.Title
-              title={ue.title}
-              subtitle={[ue.date, ue.notes].filter(Boolean).join(" • ")}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditUpcomingIdx(idx);
-                      const u = upcomingEvents[idx];
-                      setNewUpcomingTitle(u.title);
-                      setNewUpcomingDate(u.date || "");
-                      setNewUpcomingNotes(u.notes || "");
-                      setUpcomingModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() => setUpcomingEvents((arr) => arr.filter((_, i) => i !== idx))}
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
-      </List.Section>
+      <GiftIdeasSection
+        items={giftIdeas}
+        onAdd={(form) => setGiftIdeas((arr) => [...arr, { title: form.title, notes: form.notes || undefined, occasion: form.occasion || undefined, status: form.status || undefined, priority: form.priority ? Number(form.priority) : undefined }])}
+        onEdit={(index, form) => setGiftIdeas((arr) => { const next = [...arr]; next[index] = { title: form.title, notes: form.notes || undefined, occasion: form.occasion || undefined, status: form.status || undefined, priority: form.priority ? Number(form.priority) : undefined }; return next; })}
+        onDelete={(index) => setGiftIdeas((arr) => arr.filter((_, i) => i !== index))}
+      />
 
-      <List.Section>
-        <List.Subheader>Gift Ideas</List.Subheader>
-        {(giftIdeas ?? []).map((gi, idx) => (
-          <Card key={`${gi.title}-${idx}`} style={{ marginBottom: 8 }}>
-            <Card.Title
-              title={gi.title}
-              subtitle={[
-                gi.notes,
-                gi.occasion,
-                gi.status,
-                gi.priority ? `priority ${gi.priority}` : undefined,
-              ]
-                .filter(Boolean)
-                .join(" • ")}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditGiftIdx(idx);
-                      const g = giftIdeas[idx];
-                      setGiftForm({
-                        title: g.title,
-                        notes: g.notes || "",
-                        occasion: g.occasion || "",
-                        status: g.status || "",
-                        priority: g.priority ? String(g.priority) : "",
-                      });
-                      setGiftModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() => setGiftIdeas((arr) => arr.filter((_, i) => i !== idx))}
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
-        <Button
-          onPress={() => {
-            setEditGiftIdx(null);
-            setGiftForm({ title: "", notes: "", occasion: "", status: "", priority: "" });
-            setGiftModalVisible(true);
-          }}
-        >
-          Add gift idea
-        </Button>
-      </List.Section>
-
-      <List.Section>
-        <List.Subheader>Interactions</List.Subheader>
-        {(interactions ?? []).map((itx, idx) => (
-          <Card key={`${itx.summary}-${idx}`} style={{ marginBottom: 8 }}>
-            <Card.Title
-              title={itx.summary}
-              subtitle={[itx.date, itx.channel, itx.location].filter(Boolean).join(" • ")}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditInterIdx(idx);
-                      const x = interactions[idx];
-                      setInterForm({
-                        summary: x.summary,
-                        date: x.date || "",
-                        channel: x.channel || "",
-                        location: x.location || "",
-                      });
-                      setInterModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() => setInteractions((arr) => arr.filter((_, i) => i !== idx))}
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
-        <Button
-          onPress={() => {
-            setEditInterIdx(null);
-            setInterForm({ summary: "", date: "", channel: "", location: "" });
-            setInterModalVisible(true);
-          }}
-        >
-          Add interaction
-        </Button>
-      </List.Section>
+      <InteractionsSection
+        items={interactions}
+        onAdd={(form) => setInteractions((arr) => [...arr, { ...form }])}
+        onEdit={(index, form) => setInteractions((arr) => { const next = [...arr]; next[index] = { ...form }; return next; })}
+        onDelete={(index) => setInteractions((arr) => arr.filter((_, i) => i !== index))}
+      />
 
       {error ? (
         <Text style={{ color: "red", marginBottom: 12 }}>{String((error as any).message)}</Text>
@@ -353,163 +200,9 @@ export default function AddPersonScreen({ navigation }: any) {
         Save
       </Button>
 
-      {/* Current Event Modal */}
-      <PortalLike
-        visible={currentEventModalVisible}
-        onDismiss={() => setCurrentEventModalVisible(false)}
-        title={editCurrentIdx !== null ? "Edit Current Event" : "Add Current Event"}
-        onSave={() => {
-          const v = currentEventText.trim();
-          if (!v) return;
-          setCurrentEvents((arr) => {
-            if (editCurrentIdx !== null) {
-              const next = [...arr];
-              next[editCurrentIdx] = v;
-              return next;
-            }
-            return [...arr, v];
-          });
-          setCurrentEventModalVisible(false);
-        }}
-      >
-        <TextInput
-          label="Event"
-          value={currentEventText}
-          onChangeText={setCurrentEventText}
-          style={{ marginBottom: 8 }}
-        />
-      </PortalLike>
-
-      {/* Upcoming Event Modal */}
-      <PortalLike
-        visible={upcomingModalVisible}
-        onDismiss={() => setUpcomingModalVisible(false)}
-        title={editUpcomingIdx !== null ? "Edit Upcoming Event" : "Add Upcoming Event"}
-        onSave={() => {
-          if (!newUpcomingTitle.trim()) return;
-          const payload = {
-            title: newUpcomingTitle.trim(),
-            date: newUpcomingDate || undefined,
-            notes: newUpcomingNotes || undefined,
-          } as any;
-          setUpcomingEvents((arr) => {
-            if (editUpcomingIdx !== null) {
-              const next = [...arr];
-              next[editUpcomingIdx] = { ...next[editUpcomingIdx], ...payload };
-              return next;
-            }
-            return [...arr, payload];
-          });
-          setUpcomingModalVisible(false);
-        }}
-      >
-        <TextInput
-          label="Title"
-          value={newUpcomingTitle}
-          onChangeText={setNewUpcomingTitle}
-          style={{ marginBottom: 8 }}
-        />
-        <DateInput
-          label="Date"
-          value={newUpcomingDate}
-          onChange={(v) => setNewUpcomingDate(v)}
-          style={{ marginBottom: 8 }}
-        />
-        <TextInput
-          label="Notes"
-          value={newUpcomingNotes}
-          onChangeText={setNewUpcomingNotes}
-          style={{ marginBottom: 8 }}
-        />
-      </PortalLike>
-
-      {/* Gift Idea Modal */}
-      <GiftIdeaModal
-        visible={giftModalVisible}
-        titleText={editGiftIdx !== null ? "Edit Gift Idea" : "Add Gift Idea"}
-        initial={giftForm}
-        onDismiss={() => setGiftModalVisible(false)}
-        onSave={(form) => {
-          setGiftIdeas((arr) => {
-            if (editGiftIdx !== null) {
-              const next = [...arr];
-              next[editGiftIdx] = {
-                ...next[editGiftIdx],
-                title: form.title,
-                notes: form.notes || undefined,
-                occasion: form.occasion || undefined,
-                status: form.status || undefined,
-                priority: form.priority ? Number(form.priority) : undefined,
-              };
-              return next;
-            }
-            return [
-              ...arr,
-              {
-                title: form.title,
-                notes: form.notes || undefined,
-                occasion: form.occasion || undefined,
-                status: form.status || undefined,
-                priority: form.priority ? Number(form.priority) : undefined,
-              },
-            ];
-          });
-          setGiftModalVisible(false);
-        }}
-      />
-
-      {/* Interaction Modal */}
-      <InteractionModal
-        visible={interModalVisible}
-        titleText={editInterIdx !== null ? "Edit Interaction" : "Add Interaction"}
-        initial={interForm}
-        onDismiss={() => setInterModalVisible(false)}
-        onSave={(form) => {
-          setInteractions((arr) => {
-            if (editInterIdx !== null) {
-              const next = [...arr];
-              next[editInterIdx] = { ...next[editInterIdx], ...form };
-              return next;
-            }
-            return [...arr, { ...form }];
-          });
-          setInterModalVisible(false);
-        }}
-      />
+      {/* Sections render their own modals */}
     </ScrollView>
   );
 }
 
-function PortalLike({ visible, onDismiss, title, onSave, children }: any) {
-  // Lightweight wrapper to reuse the inline modal pattern without duplicating code
-  const { Portal, Modal } = require("react-native-paper");
-  const { View } = require("react-native");
-  const { Text, Button } = require("react-native-paper");
-  return (
-    <Portal>
-      <Modal
-        visible={visible}
-        onDismiss={onDismiss}
-        contentContainerStyle={{
-          backgroundColor: "white",
-          margin: 16,
-          borderRadius: 12,
-          padding: 16,
-        }}
-      >
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-          {title}
-        </Text>
-        {children}
-        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={onSave}>
-            Save
-          </Button>
-        </View>
-      </Modal>
-    </Portal>
-  );
-}
+// Sections provide built-in modals; no local modal components needed

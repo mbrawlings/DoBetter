@@ -1,12 +1,9 @@
 import * as React from "react";
-import { ScrollView, View, Platform } from "react-native";
+import { ScrollView, View } from "react-native";
 import {
   Text,
   TextInput,
   Button,
-  List,
-  Card,
-  IconButton,
   ActivityIndicator,
 } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
@@ -25,9 +22,11 @@ import {
 } from "../graphql/operations";
 import SelectInput from "../components/inputs/SelectInput";
 import DateInput from "../components/inputs/DateInput";
-import GiftIdeaModal, { GiftIdeaForm } from "../components/modals/GiftIdeaModal";
-import InteractionModal, { InteractionForm } from "../components/modals/InteractionModal";
-import UpcomingEventModal, { UpcomingEventForm } from "../components/modals/UpcomingEventModal";
+import { GiftIdeaForm } from "../components/modals/GiftIdeaModal";
+import { InteractionForm } from "../components/modals/InteractionModal";
+import EventsSection from "../components/sections/EventsSection";
+import GiftIdeasSection from "../components/sections/GiftIdeasSection";
+import InteractionsSection from "../components/sections/InteractionsSection";
 import { RELATIONSHIP_OPTIONS } from "../constants/options";
 
 export default function EditPersonScreen({ navigation }: any) {
@@ -61,19 +60,7 @@ export default function EditPersonScreen({ navigation }: any) {
   const [birthDate, setBirthDate] = React.useState<string>("");
   const [interestsCsv, setInterestsCsv] = React.useState("");
 
-  const [giftModalVisible, setGiftModalVisible] = React.useState(false);
-  const [editingGift, setEditingGift] = React.useState<any | null>(null);
-
-  const [interModalVisible, setInterModalVisible] = React.useState(false);
-  const [editingInter, setEditingInter] = React.useState<any | null>(null);
-
-  // Events state for add flows
-  const [addCurrentEventVisible, setAddCurrentEventVisible] = React.useState(false);
-  const [newCurrentEvent, setNewCurrentEvent] = React.useState("");
-  const [addUpcomingEventVisible, setAddUpcomingEventVisible] = React.useState(false);
-  const [newUpcomingEvent, setNewUpcomingEvent] = React.useState<UpcomingEventForm | undefined>(
-    undefined
-  );
+  // Modals handled by reusable sections
 
   React.useEffect(() => {
     if (person) {
@@ -183,289 +170,89 @@ export default function EditPersonScreen({ navigation }: any) {
         style={{ marginBottom: 16 }}
       />
 
-      {/* Events */}
-      <List.Section>
-        <List.Subheader>Events</List.Subheader>
-        <Button
-          onPress={() => {
-            setNewCurrentEvent("");
-            setAddCurrentEventVisible(true);
-          }}
-        >
-          Add current event
-        </Button>
-        {(person?.currentEvents ?? []).map((ce: string, idx: number) => (
-          <Card key={`${ce}-${idx}`} style={{ marginHorizontal: 8, marginTop: 8 }}>
-            <Card.Title title={ce} />
-          </Card>
-        ))}
+      <EventsSection
+        currentEvents={person?.currentEvents ?? []}
+        upcomingEvents={person?.upcomingEvents ?? []}
+        onAddCurrent={async (text) => {
+          const next = [...(person?.currentEvents ?? []), text];
+          await updatePerson({ variables: { id: personId, input: { currentEvents: next } } });
+          refetch();
+        }}
+        onEditCurrent={async (index, text) => {
+          const base = [...(person?.currentEvents ?? [])];
+          base[index] = text;
+          await updatePerson({ variables: { id: personId, input: { currentEvents: base } } });
+          refetch();
+        }}
+        onDeleteCurrent={async (index) => {
+          const base = [...(person?.currentEvents ?? [])].filter((_, i) => i !== index);
+          await updatePerson({ variables: { id: personId, input: { currentEvents: base } } });
+          refetch();
+        }}
+        onAddUpcoming={async (form) => {
+          const payload: any = { title: form.title, date: form.date || undefined, notes: form.notes || undefined };
+          const next = [...(person?.upcomingEvents ?? []), payload];
+          await updatePerson({ variables: { id: personId, input: { upcomingEvents: next } } });
+          refetch();
+        }}
+        onEditUpcoming={async (index, form) => {
+          const base: any[] = [...(person?.upcomingEvents ?? [])];
+          base[index] = { title: form.title, date: form.date || undefined, notes: form.notes || undefined };
+          await updatePerson({ variables: { id: personId, input: { upcomingEvents: base } } });
+          refetch();
+        }}
+        onDeleteUpcoming={async (index) => {
+          const base = [...(person?.upcomingEvents ?? [])].filter((_, i) => i !== index);
+          await updatePerson({ variables: { id: personId, input: { upcomingEvents: base } } });
+          refetch();
+        }}
+      />
 
-        <Button
-          onPress={() => {
-            setNewUpcomingEvent({ title: "", date: "", notes: "" });
-            setAddUpcomingEventVisible(true);
-          }}
-        >
-          Add upcoming event
-        </Button>
-        {(person?.upcomingEvents ?? []).map((ue: any, idx: number) => (
-          <Card key={`${ue?.title ?? "ue"}-${idx}`} style={{ marginHorizontal: 8, marginTop: 8 }}>
-            <Card.Title
-              title={ue?.title}
-              subtitle={[ue?.date, ue?.notes].filter(Boolean).join(" • ")}
-            />
-          </Card>
-        ))}
-      </List.Section>
+      <GiftIdeasSection
+        items={(giftData?.giftIdeas ?? []) as any}
+        onAdd={async (form: GiftIdeaForm) => {
+          await createGiftIdea({ variables: { input: { personId, title: form.title, notes: form.notes || undefined, occasion: form.occasion || undefined, status: form.status || undefined, priority: form.priority ? Number(form.priority) : undefined } } });
+          refetchGifts();
+        }}
+        onEdit={async (index, form) => {
+          const item = (giftData?.giftIdeas ?? [])[index] as any;
+          if (!item?.id) return;
+          await updateGiftIdea({ variables: { id: item.id, input: { title: form.title || undefined, notes: form.notes || undefined, occasion: form.occasion || undefined, status: form.status || undefined, priority: form.priority ? Number(form.priority) : undefined } } });
+          refetchGifts();
+        }}
+        onDelete={async (index) => {
+          const item = (giftData?.giftIdeas ?? [])[index] as any;
+          if (!item?.id) return;
+          await deleteGiftIdea({ variables: { id: item.id } });
+          refetchGifts();
+        }}
+      />
 
-      {/* Gift Ideas */}
-      <List.Section>
-        <List.Subheader>Gift Ideas</List.Subheader>
-        {(giftData?.giftIdeas ?? []).map((gi: any) => (
-          <Card key={gi.id} style={{ marginBottom: 8 }}>
-            <Card.Title
-              title={gi.title}
-              subtitle={[
-                gi.occasion,
-                gi.status,
-                gi.priority ? `priority ${gi.priority}` : undefined,
-              ]
-                .filter(Boolean)
-                .join(" • ")}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditingGift(gi);
-                      setGiftModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() =>
-                      deleteGiftIdea({ variables: { id: gi.id } }).then(() => refetchGifts())
-                    }
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
-        <Button
-          onPress={() => {
-            setEditingGift(null);
-            setGiftModalVisible(true);
-          }}
-        >
-          Add gift idea
-        </Button>
-      </List.Section>
-
-      {/* Interactions */}
-      <List.Section>
-        <List.Subheader>Interactions</List.Subheader>
-        {(interData?.interactions ?? []).map((ix: any) => (
-          <Card key={ix.id} style={{ marginBottom: 8 }}>
-            <Card.Title
-              title={ix.summary}
-              subtitle={[ix.date, ix.channel, ix.location].filter(Boolean).join(" • ")}
-              right={() => (
-                <View style={{ flexDirection: "row" }}>
-                  <IconButton
-                    icon="pencil"
-                    onPress={() => {
-                      setEditingInter(ix);
-                      setInterModalVisible(true);
-                    }}
-                  />
-                  <IconButton
-                    icon="delete"
-                    onPress={() =>
-                      deleteInteraction({ variables: { id: ix.id } }).then(() => refetchInter())
-                    }
-                  />
-                </View>
-              )}
-            />
-          </Card>
-        ))}
-        <Button
-          onPress={() => {
-            setEditingInter(null);
-            setInterModalVisible(true);
-          }}
-        >
-          Add interaction
-        </Button>
-      </List.Section>
+      <InteractionsSection
+        items={(interData?.interactions ?? []) as any}
+        onAdd={async (form: InteractionForm) => {
+          await createInteraction({ variables: { input: { personId, summary: form.summary, date: form.date || undefined, channel: form.channel || undefined, location: form.location || undefined } } });
+          refetchInter();
+        }}
+        onEdit={async (index, form) => {
+          const item = (interData?.interactions ?? [])[index] as any;
+          if (!item?.id) return;
+          await updateInteraction({ variables: { id: item.id, input: { summary: form.summary || undefined, date: form.date || undefined, channel: form.channel || undefined, location: form.location || undefined } } });
+          refetchInter();
+        }}
+        onDelete={async (index) => {
+          const item = (interData?.interactions ?? [])[index] as any;
+          if (!item?.id) return;
+          await deleteInteraction({ variables: { id: item.id } });
+          refetchInter();
+        }}
+      />
 
       <Button mode="contained" onPress={onSave} loading={saving} disabled={saving}>
         Save
       </Button>
 
-      {/* Gift Modal */}
-      <GiftIdeaModal
-        visible={giftModalVisible}
-        titleText={editingGift ? "Edit Gift Idea" : "Add Gift Idea"}
-        initial={
-          editingGift
-            ? {
-                title: editingGift.title,
-                notes: editingGift.notes || "",
-                occasion: editingGift.occasion || "",
-                status: editingGift.status || "",
-                priority: editingGift.priority ? String(editingGift.priority) : "",
-              }
-            : undefined
-        }
-        onDismiss={() => setGiftModalVisible(false)}
-        onSave={async (form: GiftIdeaForm) => {
-          const input: any = {
-            title: form.title || undefined,
-            notes: form.notes || undefined,
-            occasion: form.occasion || undefined,
-            status: form.status || undefined,
-            priority: form.priority ? Number(form.priority) : undefined,
-          };
-          if (editingGift?.id) {
-            await updateGiftIdea({ variables: { id: editingGift.id, input } });
-          } else {
-            await createGiftIdea({
-              variables: {
-                input: {
-                  personId,
-                  title: form.title,
-                  notes: form.notes || undefined,
-                  occasion: form.occasion || undefined,
-                  status: form.status || undefined,
-                  priority: form.priority ? Number(form.priority) : undefined,
-                },
-              },
-            });
-          }
-          setGiftModalVisible(false);
-          refetchGifts();
-        }}
-      />
-
-      {/* Interaction Modal */}
-      <InteractionModal
-        visible={interModalVisible}
-        titleText={editingInter ? "Edit Interaction" : "Add Interaction"}
-        initial={
-          editingInter
-            ? {
-                summary: editingInter.summary,
-                date: editingInter.date || "",
-                channel: editingInter.channel || "",
-                location: editingInter.location || "",
-              }
-            : undefined
-        }
-        onDismiss={() => setInterModalVisible(false)}
-        onSave={async (form: InteractionForm) => {
-          const input: any = {
-            summary: form.summary || undefined,
-            date: form.date || undefined,
-            channel: form.channel || undefined,
-            location: form.location || undefined,
-          };
-          if (editingInter?.id) {
-            await updateInteraction({ variables: { id: editingInter.id, input } });
-          } else {
-            await createInteraction({
-              variables: {
-                input: {
-                  personId,
-                  summary: form.summary,
-                  date: form.date || undefined,
-                  channel: form.channel || undefined,
-                  location: form.location || undefined,
-                },
-              },
-            });
-          }
-          setInterModalVisible(false);
-          refetchInter();
-        }}
-      />
-
-      {/* Add Current Event Modal */}
-      <SimpleModal
-        visible={addCurrentEventVisible}
-        title="Add Current Event"
-        onDismiss={() => setAddCurrentEventVisible(false)}
-        onSave={async () => {
-          const text = newCurrentEvent.trim();
-          if (!text) return;
-          const next = [...(person?.currentEvents ?? []), text];
-          await updatePerson({ variables: { id: personId, input: { currentEvents: next } } });
-          setAddCurrentEventVisible(false);
-          setNewCurrentEvent("");
-          refetch();
-        }}
-      >
-        <TextInput
-          label="Event"
-          value={newCurrentEvent}
-          onChangeText={setNewCurrentEvent}
-          style={{ marginBottom: 8 }}
-        />
-      </SimpleModal>
-
-      {/* Add Upcoming Event Modal */}
-      <UpcomingEventModal
-        visible={addUpcomingEventVisible}
-        titleText="Add Upcoming Event"
-        initial={newUpcomingEvent}
-        onDismiss={() => setAddUpcomingEventVisible(false)}
-        onSave={async (form) => {
-          if (!form.title.trim()) return;
-          const payload = {
-            title: form.title.trim(),
-            date: form.date || undefined,
-            notes: form.notes || undefined,
-          } as any;
-          const next = [...(person?.upcomingEvents ?? []), payload];
-          await updatePerson({ variables: { id: personId, input: { upcomingEvents: next } } });
-          setAddUpcomingEventVisible(false);
-          refetch();
-        }}
-      />
+      {/* Sections render their own modals */}
     </ScrollView>
-  );
-}
-
-function SimpleModal({ visible, onDismiss, title, onSave, children }: any) {
-  const { Portal, Modal } = require("react-native-paper");
-  const { View } = require("react-native");
-  const { Text, Button } = require("react-native-paper");
-  return (
-    <Portal>
-      <Modal
-        visible={visible}
-        onDismiss={onDismiss}
-        contentContainerStyle={{
-          backgroundColor: "white",
-          margin: 16,
-          borderRadius: 12,
-          padding: 16,
-        }}
-      >
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-          {title}
-        </Text>
-        {children}
-        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={onSave}>
-            Save
-          </Button>
-        </View>
-      </Modal>
-    </Portal>
   );
 }
