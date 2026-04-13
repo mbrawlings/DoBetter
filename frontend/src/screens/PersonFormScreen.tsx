@@ -5,6 +5,7 @@ import { useRoute } from '@react-navigation/native';
 import { useQuery, useMutation } from '@apollo/client';
 import DateInput from '../components/inputs/DateInput';
 import SelectInput from '../components/inputs/SelectInput';
+import ChipInput from '../components/inputs/ChipInput';
 import EventsSection from '../components/sections/EventsSection';
 import GiftIdeasSection from '../components/sections/GiftIdeasSection';
 import InteractionsSection from '../components/sections/InteractionsSection';
@@ -36,12 +37,8 @@ function buildPersonInput(fields: {
   workRole: string;
   relationship: string;
   birthDate: string;
-  interestsCsv: string;
+  interests: string[];
 }) {
-  const interests = fields.interestsCsv
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
   const input: any = {
     firstName: fields.firstName.trim(),
     lastName: fields.lastName.trim(),
@@ -51,7 +48,7 @@ function buildPersonInput(fields: {
   if (fields.workRole) input.workRole = fields.workRole;
   if (fields.relationship) input.relationship = fields.relationship;
   if (fields.birthDate) input.birthDate = fields.birthDate;
-  if (interests.length) input.interests = interests;
+  if (fields.interests.length) input.interests = fields.interests;
   return input;
 }
 
@@ -82,14 +79,17 @@ export default function PersonFormScreen({ navigation }: any) {
   const { data, loading, error, refetch } = useQuery(GET_PERSON_QUERY, {
     variables: { id: personId! },
     skip: !isEdit,
+    fetchPolicy: 'cache-and-network',
   });
   const { data: giftData, refetch: refetchGifts } = useQuery(GIFT_IDEAS_QUERY, {
     variables: { personId: personId! },
     skip: !isEdit,
+    fetchPolicy: 'cache-and-network',
   });
   const { data: interData, refetch: refetchInter } = useQuery(INTERACTIONS_QUERY, {
     variables: { personId: personId! },
     skip: !isEdit,
+    fetchPolicy: 'cache-and-network',
   });
 
   const [createPerson, { loading: creating, error: createError }] = useMutation(CREATE_PERSON_MUTATION);
@@ -111,7 +111,7 @@ export default function PersonFormScreen({ navigation }: any) {
   const [workRole, setWorkRole] = React.useState('');
   const [relationship, setRelationship] = React.useState('');
   const [birthDate, setBirthDate] = React.useState('');
-  const [interestsCsv, setInterestsCsv] = React.useState('');
+  const [interests, setInterests] = React.useState<string[]>([]);
 
   const [localCurrentEvents, setLocalCurrentEvents] = React.useState<string[]>([]);
   const [localUpcomingEvents, setLocalUpcomingEvents] = React.useState<
@@ -129,19 +129,19 @@ export default function PersonFormScreen({ navigation }: any) {
       setWorkRole(person.workRole ?? '');
       setRelationship(person.relationship ?? '');
       setBirthDate(person.birthDate ? formatDateYmd(new Date(person.birthDate)) : '');
-      setInterestsCsv(Array.isArray(person.interests) ? person.interests.join(', ') : '');
+      setInterests(Array.isArray(person.interests) ? person.interests : []);
     }
   }, [person]);
 
   const canSubmit = firstName.trim().length > 0 && lastName.trim().length > 0;
 
   function currentPersonInput() {
-    return buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interestsCsv });
+    return buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interests });
   }
 
   async function onSave() {
     if (!canSubmit) return;
-    const input = buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interestsCsv });
+    const input = buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interests });
 
     if (isEdit) {
       await updatePerson({ variables: { id: personId, input } });
@@ -268,12 +268,10 @@ export default function PersonFormScreen({ navigation }: any) {
       <FieldGroup>
         <DateInput label="Birth Date" value={birthDate} onChange={(v) => setBirthDate(v)} mode="flat" style={styles.input} />
         <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
-        <TextInput
-          label="Interests (comma-separated)"
-          value={interestsCsv}
-          onChangeText={setInterestsCsv}
-          mode="flat"
-          style={styles.input}
+        <ChipInput
+          label="Interests"
+          values={interests}
+          onChange={setInterests}
         />
       </FieldGroup>
 
