@@ -16,18 +16,60 @@ export default function DateInput({ label, value, onChange, style }: Props) {
   const [showPickerAndroid, setShowPickerAndroid] = React.useState(false);
   const [iosModalVisible, setIosModalVisible] = React.useState(false);
   const [tempDate, setTempDate] = React.useState<Date>(dateObj ?? new Date());
+  const webInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     setDateObj(value ? new Date(value) : undefined);
   }, [value]);
 
   function openPicker() {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'web') {
+      webInputRef.current?.showPicker?.();
+      webInputRef.current?.click();
+    } else if (Platform.OS === 'ios') {
       setTempDate(dateObj ?? new Date());
       setIosModalVisible(true);
     } else {
       setShowPickerAndroid(true);
     }
+  }
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={style}>
+        <TextInput
+          label={label}
+          value={value}
+          editable={false}
+          right={<TextInput.Icon icon="calendar" onPress={openPicker} />}
+          onPressIn={openPicker}
+        />
+        <input
+          ref={webInputRef}
+          type="date"
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v) {
+              const d = new Date(v + 'T00:00:00');
+              setDateObj(d);
+              onChange(v, d);
+            } else {
+              setDateObj(undefined);
+              onChange('');
+            }
+          }}
+          style={{
+            position: 'absolute',
+            opacity: 0,
+            width: 1,
+            height: 1,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        />
+      </View>
+    );
   }
 
   return (
@@ -69,5 +111,3 @@ export default function DateInput({ label, value, onChange, style }: Props) {
     </>
   );
 }
-
-
