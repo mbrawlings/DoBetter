@@ -56,7 +56,7 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={loading} onRefresh={() => refetch()} />}
           contentContainerStyle={{ padding: 16, gap: 12 }}
           renderItem={({ item }) => (
-            <Card mode="elevated" style={{ borderRadius: 12 }} onPress={() => (navigation as any).navigate('EditPerson' as never, { id: item.id } as never)}>
+            <Card mode="elevated" style={{ borderRadius: 12 }} onPress={() => (navigation as any).navigate('Person' as never, { id: item.id } as never)}>
               <Card.Title
                 title={`${item.firstName} ${item.lastName}`}
                 left={(props) => <List.Icon {...props} icon="account" />}
@@ -72,7 +72,7 @@ export default function HomeScreen() {
       )}
       <FAB
         icon="plus"
-        onPress={() => (navigation as any).navigate('AddPerson' as never)}
+        onPress={() => (navigation as any).navigate('Person' as never)}
         style={{ position: 'absolute', right: 16, bottom: 24 }}
         accessibilityLabel="Add person"
       />

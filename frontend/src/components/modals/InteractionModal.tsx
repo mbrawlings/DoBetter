@@ -1,16 +1,12 @@
 import * as React from 'react';
-import { View } from 'react-native';
-import { Portal, Modal, Text, Button, TextInput } from 'react-native-paper';
+import { TextInput } from 'react-native-paper';
 import SelectInput from '../inputs/SelectInput';
 import DateInput from '../inputs/DateInput';
+import FormModal from './FormModal';
 import { INTERACTION_CHANNEL_OPTIONS } from '../../constants/options';
+import type { InteractionFormData } from '../../types';
 
-export type InteractionForm = {
-  summary: string;
-  date?: string;
-  channel?: string;
-  location?: string;
-};
+export type InteractionForm = InteractionFormData;
 
 type Props = {
   visible: boolean;
@@ -34,20 +30,17 @@ export default function InteractionModal({ visible, titleText, initial, onDismis
   }, [initial, visible]);
 
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={{ backgroundColor: 'white', margin: 16, borderRadius: 12, padding: 16 }}>
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>{titleText}</Text>
-        <TextInput label="Summary" value={summary} onChangeText={setSummary} style={{ marginBottom: 8 }} />
-        <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
-        <SelectInput label="Channel" value={channel} onChange={setChannel} options={INTERACTION_CHANNEL_OPTIONS as unknown as string[]} style={{ marginBottom: 8 }} />
-        <TextInput label="Location" value={location} onChangeText={setLocation} style={{ marginBottom: 8 }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>Cancel</Button>
-          <Button mode="contained" onPress={() => onSave({ summary, date, channel, location })} disabled={!summary.trim()}>Save</Button>
-        </View>
-      </Modal>
-    </Portal>
+    <FormModal
+      visible={visible}
+      title={titleText}
+      onDismiss={onDismiss}
+      onSave={() => onSave({ summary, date, channel, location })}
+      saveDisabled={!summary.trim()}
+    >
+      <TextInput label="Summary" value={summary} onChangeText={setSummary} style={{ marginBottom: 8 }} />
+      <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
+      <SelectInput label="Channel" value={channel} onChange={setChannel} options={INTERACTION_CHANNEL_OPTIONS as unknown as string[]} style={{ marginBottom: 8 }} />
+      <TextInput label="Location" value={location} onChangeText={setLocation} style={{ marginBottom: 8 }} />
+    </FormModal>
   );
 }
-
-

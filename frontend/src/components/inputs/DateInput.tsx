@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Platform, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Portal, Modal, Text, Button, TextInput } from 'react-native-paper';
+import { formatDateYmd } from '../../utils/date';
 
 type Props = {
   label: string;
@@ -9,13 +10,6 @@ type Props = {
   onChange: (value: string, date?: Date) => void;
   style?: any;
 };
-
-function formatDateYmd(date: Date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
 
 export default function DateInput({ label, value, onChange, style }: Props) {
   const [dateObj, setDateObj] = React.useState<Date | undefined>(value ? new Date(value) : undefined);

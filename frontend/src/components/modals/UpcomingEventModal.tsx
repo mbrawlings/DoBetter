@@ -1,13 +1,10 @@
 import * as React from 'react';
-import { View } from 'react-native';
-import { Portal, Modal, Text, Button, TextInput } from 'react-native-paper';
+import { TextInput } from 'react-native-paper';
 import DateInput from '../inputs/DateInput';
+import FormModal from './FormModal';
+import type { UpcomingEventFormData } from '../../types';
 
-export type UpcomingEventForm = {
-  title: string;
-  date?: string;
-  notes?: string;
-};
+export type UpcomingEventForm = UpcomingEventFormData;
 
 type Props = {
   visible: boolean;
@@ -29,19 +26,16 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
   }, [initial, visible]);
 
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={{ backgroundColor: 'white', margin: 16, borderRadius: 12, padding: 16 }}>
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>{titleText}</Text>
-        <TextInput label="Title" value={title} onChangeText={setTitle} style={{ marginBottom: 8 }} />
-        <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
-        <TextInput label="Notes" value={notes} onChangeText={setNotes} style={{ marginBottom: 8 }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>Cancel</Button>
-          <Button mode="contained" onPress={() => onSave({ title, date, notes })} disabled={!title.trim()}>Save</Button>
-        </View>
-      </Modal>
-    </Portal>
+    <FormModal
+      visible={visible}
+      title={titleText}
+      onDismiss={onDismiss}
+      onSave={() => onSave({ title, date, notes })}
+      saveDisabled={!title.trim()}
+    >
+      <TextInput label="Title" value={title} onChangeText={setTitle} style={{ marginBottom: 8 }} />
+      <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
+      <TextInput label="Notes" value={notes} onChangeText={setNotes} style={{ marginBottom: 8 }} />
+    </FormModal>
   );
 }
-
-
