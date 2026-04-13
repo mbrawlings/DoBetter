@@ -8,10 +8,11 @@ type Props = {
   label: string;
   value: string; // YYYY-MM-DD or empty
   onChange: (value: string, date?: Date) => void;
+  mode?: 'flat' | 'outlined';
   style?: any;
 };
 
-export default function DateInput({ label, value, onChange, style }: Props) {
+export default function DateInput({ label, value, onChange, mode, style }: Props) {
   const [dateObj, setDateObj] = React.useState<Date | undefined>(value ? new Date(value) : undefined);
   const [showPickerAndroid, setShowPickerAndroid] = React.useState(false);
   const [iosModalVisible, setIosModalVisible] = React.useState(false);
@@ -36,13 +37,15 @@ export default function DateInput({ label, value, onChange, style }: Props) {
 
   if (Platform.OS === 'web') {
     return (
-      <View style={style}>
+      <View>
         <TextInput
           label={label}
           value={value}
           editable={false}
+          mode={mode}
           right={<TextInput.Icon icon="calendar" onPress={openPicker} />}
           onPressIn={openPicker}
+          style={style}
         />
         <input
           ref={webInputRef}
@@ -78,6 +81,7 @@ export default function DateInput({ label, value, onChange, style }: Props) {
         label={label}
         value={value}
         editable={false}
+        mode={mode}
         right={<TextInput.Icon icon="calendar" onPress={openPicker} />}
         onPressIn={openPicker}
         style={style}

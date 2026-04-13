@@ -258,6 +258,7 @@ export default function PersonFormScreen({ navigation }: any) {
           value={relationship}
           onChange={setRelationship}
           options={RELATIONSHIP_OPTIONS as unknown as string[]}
+          mode="flat"
           style={styles.input}
         />
       </FieldGroup>
@@ -265,7 +266,7 @@ export default function PersonFormScreen({ navigation }: any) {
       {/* Personal */}
       <SectionLabel>Personal</SectionLabel>
       <FieldGroup>
-        <DateInput label="Birth Date" value={birthDate} onChange={(v) => setBirthDate(v)} style={styles.input} />
+        <DateInput label="Birth Date" value={birthDate} onChange={(v) => setBirthDate(v)} mode="flat" style={styles.input} />
         <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
         <TextInput
           label="Interests (comma-separated)"

@@ -6,16 +6,18 @@ type Props = {
   value: string;
   options: ReadonlyArray<string>;
   onChange: (value: string) => void;
+  mode?: 'flat' | 'outlined';
   style?: any;
 };
 
-export default function SelectInput({ label, value, options, onChange, style }: Props) {
+export default function SelectInput({ label, value, options, onChange, mode, style }: Props) {
   const [visible, setVisible] = React.useState(false);
   return (
     <Menu visible={visible} onDismiss={() => setVisible(false)} anchor={
       <TextInput
         label={label}
         value={value}
+        mode={mode}
         right={<TextInput.Icon icon="menu-down" onPress={() => setVisible(true)} />}
         onPressIn={() => setVisible(true)}
         editable={false}
@@ -28,5 +30,3 @@ export default function SelectInput({ label, value, options, onChange, style }: 
     </Menu>
   );
 }
-
-
