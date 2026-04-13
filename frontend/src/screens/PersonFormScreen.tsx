@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { ScrollView, View } from 'react-native';
-import { Text, TextInput, Button, ActivityIndicator } from 'react-native-paper';
+import { ScrollView, View, StyleSheet } from 'react-native';
+import { Text, TextInput, Button, ActivityIndicator, useTheme } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { useQuery, useMutation } from '@apollo/client';
 import DateInput from '../components/inputs/DateInput';
@@ -10,6 +10,7 @@ import GiftIdeasSection from '../components/sections/GiftIdeasSection';
 import InteractionsSection from '../components/sections/InteractionsSection';
 import { RELATIONSHIP_OPTIONS } from '../constants/options';
 import { formatDateYmd } from '../utils/date';
+import { spacing } from '../theme/theme';
 import type { GiftIdeaForm } from '../components/modals/GiftIdeaModal';
 import type { InteractionForm } from '../components/modals/InteractionModal';
 import type { GiftIdea, Interaction } from '../types';
@@ -54,12 +55,30 @@ function buildPersonInput(fields: {
   return input;
 }
 
+function SectionLabel({ children }: { children: string }) {
+  const theme = useTheme();
+  return (
+    <Text style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
+      {children}
+    </Text>
+  );
+}
+
+function FieldGroup({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.fieldGroup, { backgroundColor: theme.colors.surface }]}>
+      {children}
+    </View>
+  );
+}
+
 export default function PersonFormScreen({ navigation }: any) {
   const route = useRoute() as any;
   const personId: string | undefined = route.params?.id;
   const isEdit = Boolean(personId);
+  const theme = useTheme();
 
-  // --- Queries (only fire in edit mode) ---
   const { data, loading, error, refetch } = useQuery(GET_PERSON_QUERY, {
     variables: { id: personId! },
     skip: !isEdit,
@@ -73,7 +92,6 @@ export default function PersonFormScreen({ navigation }: any) {
     skip: !isEdit,
   });
 
-  // --- Mutations ---
   const [createPerson, { loading: creating, error: createError }] = useMutation(CREATE_PERSON_MUTATION);
   const [updatePerson, { loading: updating }] = useMutation(UPDATE_PERSON_MUTATION);
   const [createGiftIdea] = useMutation(CREATE_GIFT_IDEA_MUTATION);
@@ -86,7 +104,6 @@ export default function PersonFormScreen({ navigation }: any) {
   const person = data?.person;
   const saving = creating || updating;
 
-  // --- Profile form state ---
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
   const [city, setCity] = React.useState('');
@@ -96,7 +113,6 @@ export default function PersonFormScreen({ navigation }: any) {
   const [birthDate, setBirthDate] = React.useState('');
   const [interestsCsv, setInterestsCsv] = React.useState('');
 
-  // --- Local sub-entity state (add mode only — edit mode uses server data) ---
   const [localCurrentEvents, setLocalCurrentEvents] = React.useState<string[]>([]);
   const [localUpcomingEvents, setLocalUpcomingEvents] = React.useState<
     Array<{ title: string; date?: string; notes?: string }>
@@ -104,7 +120,6 @@ export default function PersonFormScreen({ navigation }: any) {
   const [localGiftIdeas, setLocalGiftIdeas] = React.useState<GiftIdea[]>([]);
   const [localInteractions, setLocalInteractions] = React.useState<Interaction[]>([]);
 
-  // --- Hydrate form in edit mode ---
   React.useEffect(() => {
     if (person) {
       setFirstName(person.firstName ?? '');
@@ -124,7 +139,6 @@ export default function PersonFormScreen({ navigation }: any) {
     return buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interestsCsv });
   }
 
-  // --- Save handler ---
   async function onSave() {
     if (!canSubmit) return;
     const input = buildPersonInput({ firstName, lastName, city, employer, workRole, relationship, birthDate, interestsCsv });
@@ -179,67 +193,90 @@ export default function PersonFormScreen({ navigation }: any) {
     navigation.goBack();
   }
 
-  // --- Loading / error states (edit mode) ---
   if (isEdit && loading && !person) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator />
-        <Text style={{ marginTop: 8 }}>Loading\u2026</Text>
+      <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={{ marginTop: spacing.md, color: theme.colors.onSurfaceVariant }}>
+          Loading\u2026
+        </Text>
       </View>
     );
   }
   if (isEdit && error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+      <View style={[styles.center, { padding: spacing.lg, backgroundColor: theme.colors.background }]}>
         <Text variant="titleMedium">Failed to load person</Text>
-        <Text style={{ marginTop: 8 }}>{String((error as any).message)}</Text>
+        <Text style={{ marginTop: spacing.sm, color: theme.colors.onSurfaceVariant }}>
+          {String((error as any).message)}
+        </Text>
       </View>
     );
   }
 
-  // --- Derived data for sections ---
   const currentEvents = isEdit ? (person?.currentEvents ?? []) : localCurrentEvents;
   const upcomingEvents = isEdit ? (person?.upcomingEvents ?? []) : localUpcomingEvents;
   const giftIdeas: GiftIdea[] = isEdit ? ((giftData?.giftIdeas ?? []) as any) : localGiftIdeas;
   const interactions: Interaction[] = isEdit ? ((interData?.interactions ?? []) as any) : localInteractions;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16 }}>
-      <Text variant="titleLarge" style={{ marginBottom: 12 }}>
-        {isEdit ? 'Edit Person' : 'Add Person'}
-      </Text>
+    <ScrollView
+      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* Name */}
+      <SectionLabel>Name</SectionLabel>
+      <FieldGroup>
+        <TextInput
+          label={isEdit ? 'First Name' : 'First Name *'}
+          value={firstName}
+          onChangeText={setFirstName}
+          mode="flat"
+          style={styles.input}
+        />
+        <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
+        <TextInput
+          label={isEdit ? 'Last Name' : 'Last Name *'}
+          value={lastName}
+          onChangeText={setLastName}
+          mode="flat"
+          style={styles.input}
+        />
+      </FieldGroup>
 
-      <TextInput
-        label={isEdit ? 'First Name' : 'First Name*'}
-        value={firstName}
-        onChangeText={setFirstName}
-        style={{ marginBottom: 12 }}
-      />
-      <TextInput
-        label={isEdit ? 'Last Name' : 'Last Name*'}
-        value={lastName}
-        onChangeText={setLastName}
-        style={{ marginBottom: 12 }}
-      />
-      <TextInput label="City" value={city} onChangeText={setCity} style={{ marginBottom: 12 }} />
-      <TextInput label="Employer" value={employer} onChangeText={setEmployer} style={{ marginBottom: 12 }} />
-      <TextInput label="Work Role" value={workRole} onChangeText={setWorkRole} style={{ marginBottom: 12 }} />
-      <SelectInput
-        label="Relationship"
-        value={relationship}
-        onChange={setRelationship}
-        options={RELATIONSHIP_OPTIONS as unknown as string[]}
-        style={{ marginBottom: 12 }}
-      />
-      <DateInput label="Birth Date" value={birthDate} onChange={(v) => setBirthDate(v)} style={{ marginBottom: 12 }} />
-      <TextInput
-        label="Interests (comma-separated)"
-        value={interestsCsv}
-        onChangeText={setInterestsCsv}
-        style={{ marginBottom: 16 }}
-      />
+      {/* Details */}
+      <SectionLabel>Details</SectionLabel>
+      <FieldGroup>
+        <TextInput label="City" value={city} onChangeText={setCity} mode="flat" style={styles.input} />
+        <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
+        <TextInput label="Employer" value={employer} onChangeText={setEmployer} mode="flat" style={styles.input} />
+        <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
+        <TextInput label="Work Role" value={workRole} onChangeText={setWorkRole} mode="flat" style={styles.input} />
+        <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
+        <SelectInput
+          label="Relationship"
+          value={relationship}
+          onChange={setRelationship}
+          options={RELATIONSHIP_OPTIONS as unknown as string[]}
+          style={styles.input}
+        />
+      </FieldGroup>
 
-      {/* --- Events Section --- */}
+      {/* Personal */}
+      <SectionLabel>Personal</SectionLabel>
+      <FieldGroup>
+        <DateInput label="Birth Date" value={birthDate} onChange={(v) => setBirthDate(v)} style={styles.input} />
+        <View style={[styles.fieldDivider, { backgroundColor: theme.colors.surfaceVariant }]} />
+        <TextInput
+          label="Interests (comma-separated)"
+          value={interestsCsv}
+          onChangeText={setInterestsCsv}
+          mode="flat"
+          style={styles.input}
+        />
+      </FieldGroup>
+
+      {/* Events */}
       <EventsSection
         currentEvents={currentEvents}
         upcomingEvents={upcomingEvents}
@@ -296,7 +333,6 @@ export default function PersonFormScreen({ navigation }: any) {
         }
       />
 
-      {/* --- Gift Ideas Section --- */}
       <GiftIdeasSection
         items={giftIdeas}
         onAdd={isEdit
@@ -326,7 +362,6 @@ export default function PersonFormScreen({ navigation }: any) {
         }
       />
 
-      {/* --- Interactions Section --- */}
       <InteractionsSection
         items={interactions}
         onAdd={isEdit
@@ -357,12 +392,69 @@ export default function PersonFormScreen({ navigation }: any) {
       />
 
       {createError ? (
-        <Text style={{ color: 'red', marginBottom: 12 }}>{String((createError as any).message)}</Text>
+        <Text style={[styles.errorText, { color: theme.colors.error }]}>
+          {String((createError as any).message)}
+        </Text>
       ) : null}
 
-      <Button mode="contained" onPress={onSave} loading={saving} disabled={!canSubmit || saving}>
+      <Button
+        mode="contained"
+        onPress={onSave}
+        loading={saving}
+        disabled={!canSubmit || saving}
+        style={styles.saveButton}
+        contentStyle={styles.saveButtonContent}
+        labelStyle={styles.saveButtonLabel}
+      >
         Save
       </Button>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 48,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
+  },
+  fieldGroup: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  fieldDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: spacing.lg,
+  },
+  input: {
+    backgroundColor: 'transparent',
+  },
+  errorText: {
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  saveButton: {
+    marginTop: spacing.xxl,
+    borderRadius: 14,
+  },
+  saveButtonContent: {
+    paddingVertical: spacing.sm,
+  },
+  saveButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

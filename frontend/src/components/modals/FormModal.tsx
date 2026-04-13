@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { View } from 'react-native';
-import { Portal, Modal, Text, Button } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Portal, Modal, Text, Button, useTheme } from 'react-native-paper';
+import { spacing } from '../../theme/theme';
 
 type Props = {
   visible: boolean;
@@ -12,20 +13,71 @@ type Props = {
 };
 
 export default function FormModal({ visible, title, onDismiss, onSave, saveDisabled, children }: Props) {
+  const theme = useTheme();
+
   return (
     <Portal>
       <Modal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={{ backgroundColor: 'white', margin: 16, borderRadius: 12, padding: 16 }}
+        contentContainerStyle={[
+          styles.modal,
+          { backgroundColor: theme.colors.surface },
+        ]}
       >
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>{title}</Text>
+        <View style={[styles.handle, { backgroundColor: theme.colors.outline }]} />
+        <Text variant="titleMedium" style={styles.title}>{title}</Text>
         {children}
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>Cancel</Button>
-          <Button mode="contained" onPress={onSave} disabled={saveDisabled}>Save</Button>
+        <View style={styles.buttonRow}>
+          <Button
+            onPress={onDismiss}
+            textColor={theme.colors.onSurfaceVariant}
+            style={styles.cancelButton}
+          >
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={onSave}
+            disabled={saveDisabled}
+            style={styles.saveButton}
+          >
+            Save
+          </Button>
         </View>
       </Modal>
     </Portal>
   );
 }
+
+const styles = StyleSheet.create({
+  modal: {
+    margin: spacing.lg,
+    borderRadius: 20,
+    padding: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  title: {
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  cancelButton: {
+    borderRadius: 10,
+  },
+  saveButton: {
+    borderRadius: 10,
+  },
+});

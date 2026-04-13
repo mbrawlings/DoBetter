@@ -6,6 +6,8 @@ export const PERSONS_QUERY = gql`
       id
       firstName
       lastName
+      relationship
+      city
     }
   }
 `;
