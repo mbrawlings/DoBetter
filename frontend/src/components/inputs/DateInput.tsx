@@ -16,9 +16,14 @@ type Props = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+export function toYmd(value: string): string {
+  if (!value) return '';
+  return value.split('T')[0];
+}
+
 export function formatHumanDate(value: string): string {
   if (!value) return '';
-  const [yyyy, mm, dd] = value.split('-').map(Number);
+  const [yyyy, mm, dd] = toYmd(value).split('-').map(Number);
   if (!yyyy || !mm || !dd) return value;
   return `${MONTHS[mm - 1]} ${dd}, ${yyyy}`;
 }
@@ -66,7 +71,7 @@ export default function DateInput({ label, value, onChange, required, placeholde
         <input
           ref={webInputRef}
           type="date"
-          value={value}
+          value={toYmd(value)}
           onChange={(e) => {
             const v = e.target.value;
             if (v) {
