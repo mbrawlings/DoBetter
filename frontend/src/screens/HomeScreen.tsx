@@ -1,19 +1,55 @@
 import * as React from 'react';
-import { View, FlatList, RefreshControl, StyleSheet } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useQuery } from '@apollo/client';
-import { Text, FAB, Searchbar, Card, ActivityIndicator, useTheme, Icon } from 'react-native-paper';
+import { Icon, Text } from 'react-native-paper';
 import { PERSONS_QUERY } from '../graphql/operations';
-import { spacing, getAvatarColor, getInitials } from '../theme/theme';
+import { colorsLight, fontFamily, radius } from '../theme/theme';
+import {
+  Avatar,
+  NavBar,
+  NavIconAction,
+  PrimaryButton,
+  SectionLabel,
+} from '../components/ui';
 
-function InitialsAvatar({ firstName, lastName }: { firstName: string; lastName: string }) {
-  const initials = getInitials(firstName, lastName);
-  const bg = getAvatarColor(`${firstName}${lastName}`);
-  return (
-    <View style={[styles.avatar, { backgroundColor: bg }]}>
-      <Text style={styles.avatarText}>{initials}</Text>
-    </View>
-  );
+type Person = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  city?: string | null;
+  relationship?: string | null;
+};
+
+const FILTERS = ['All', 'Family', 'Friends', 'Work', 'Need to reach out'] as const;
+type Filter = (typeof FILTERS)[number];
+
+const FAMILY = new Set(['spouse', 'sibling', 'parent', 'child']);
+const FRIENDS = new Set(['friend']);
+const WORK = new Set(['colleague']);
+
+function passesFilter(p: Person, filter: Filter): boolean {
+  const rel = (p.relationship ?? '').toLowerCase();
+  switch (filter) {
+    case 'All':
+      return true;
+    case 'Family':
+      return FAMILY.has(rel);
+    case 'Friends':
+      return FRIENDS.has(rel);
+    case 'Work':
+      return WORK.has(rel);
+    case 'Need to reach out':
+      return false;
+  }
 }
 
 export default function HomeScreen() {
@@ -22,8 +58,7 @@ export default function HomeScreen() {
     fetchPolicy: 'cache-and-network',
   });
   const navigation = useNavigation();
-  const theme = useTheme();
-  const persons = data?.persons ?? [];
+  const persons: Person[] = data?.persons ?? [];
 
   useFocusEffect(
     React.useCallback(() => {
@@ -32,163 +67,344 @@ export default function HomeScreen() {
   );
 
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [filter, setFilter] = React.useState<Filter>('All');
+
+  function gotoNew() {
+    (navigation as any).navigate('Person' as never);
+  }
+  function gotoPerson(id: string) {
+    (navigation as any).navigate('Person' as never, { id } as never);
+  }
+
+  const filtered = persons.filter((p) => passesFilter(p, filter));
+
+  const Header = (
+    <NavBar
+      title="People"
+      large
+      trailing={<NavIconAction icon="plus" onPress={gotoNew} accessibilityLabel="Add person" />}
+    />
+  );
 
   if (error) {
     return (
-      <View style={[styles.center, { padding: spacing.lg }]}>
-        <Icon source="alert-circle-outline" size={48} color={theme.colors.error} />
-        <Text variant="titleMedium" style={{ marginTop: spacing.md }}>
-          Something went wrong
-        </Text>
-        <Text style={{ marginTop: spacing.xs, color: theme.colors.onSurfaceVariant }}>
-          {String((error as any).message)}
-        </Text>
+      <View style={styles.screen}>
+        {Header}
+        <View style={[styles.center, { padding: 16 }]}>
+          <Icon source="alert-circle-outline" size={48} color={colorsLight.danger} />
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorBody}>{String((error as any).message)}</Text>
+        </View>
       </View>
     );
   }
 
+  const showInitialLoading = loading && persons.length === 0;
+  const showEmpty = !loading && persons.length === 0;
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.searchContainer, { backgroundColor: theme.colors.background }]}>
-        <Searchbar
-          placeholder="Search people"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          style={[styles.searchbar, { backgroundColor: theme.colors.surfaceVariant }]}
-          inputStyle={{ fontSize: 16 }}
-          elevation={0}
-          onSubmitEditing={() =>
-            refetch({ filter: searchQuery ? { search: searchQuery } : null })
-          }
-        />
-      </View>
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => refetch()}
+            tintColor={colorsLight.primary}
+          />
+        }
+      >
+        {Header}
 
-      {loading && persons.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={{ marginTop: spacing.md, color: theme.colors.onSurfaceVariant }}>
-            Loading...
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={persons}
-          keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={() => refetch()}
-              tintColor={theme.colors.primary}
-            />
-          }
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <Card
-              mode="elevated"
-              style={styles.card}
-              onPress={() =>
-                (navigation as any).navigate('Person' as never, { id: item.id } as never)
-              }
-            >
-              <Card.Title
-                title={`${item.firstName} ${item.lastName}`}
-                titleStyle={styles.cardTitle}
-                subtitle={[item.relationship, item.city].filter(Boolean).join(' \u2022 ') || undefined}
-                subtitleStyle={styles.cardSubtitle}
-                left={() => (
-                  <InitialsAvatar firstName={item.firstName} lastName={item.lastName} />
-                )}
-                leftStyle={styles.cardLeft}
-              />
-            </Card>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Icon source="account-group-outline" size={64} color={theme.colors.outline} />
-              <Text
-                variant="titleMedium"
-                style={{ marginTop: spacing.lg, color: theme.colors.onSurfaceVariant }}
-              >
-                No people yet
-              </Text>
-              <Text style={{ marginTop: spacing.xs, color: theme.colors.outline }}>
-                Tap + to add someone
-              </Text>
+        {!showEmpty ? (
+          <>
+            <View style={styles.searchWrap}>
+              <View style={styles.searchBar}>
+                <Icon source="magnify" size={18} color={colorsLight.textMuted} />
+                <TextInput
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search people, interests, places"
+                  placeholderTextColor={colorsLight.textMuted}
+                  style={styles.searchInput}
+                  returnKeyType="search"
+                  onSubmitEditing={() =>
+                    refetch({ filter: searchQuery ? { search: searchQuery } : null })
+                  }
+                />
+              </View>
             </View>
-          }
-        />
-      )}
 
-      <FAB
-        icon="plus"
-        onPress={() => (navigation as any).navigate('Person' as never)}
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        color="#FFFFFF"
-        accessibilityLabel="Add person"
-      />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsRow}
+            >
+              {FILTERS.map((f) => {
+                const isAll = f === 'All';
+                const label = isAll ? `All ${persons.length}` : f;
+                const selected = filter === f;
+                return (
+                  <Pressable
+                    key={f}
+                    onPress={() => setFilter(f)}
+                    style={[
+                      styles.filterChip,
+                      selected ? styles.filterChipSelected : styles.filterChipDefault,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipLabel,
+                        { color: selected ? colorsLight.surface : colorsLight.text },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        ) : null}
+
+        {showInitialLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colorsLight.primary} />
+            <Text style={styles.loadingText}>Loading…</Text>
+          </View>
+        ) : showEmpty ? (
+          <EmptyState onAddFirst={gotoNew} />
+        ) : (
+          <>
+            <SectionLabel action={{ label: 'Sort: Recent' }}>
+              {`All people · ${filtered.length}`}
+            </SectionLabel>
+            {filtered.length === 0 ? (
+              <View style={styles.emptyFiltered}>
+                <Text style={styles.emptyFilteredText}>No people match this filter.</Text>
+              </View>
+            ) : (
+              <View style={styles.listGroup}>
+                {filtered.map((item, index) => {
+                  const last = index === filtered.length - 1;
+                  const subtitle = [item.relationship, item.city]
+                    .filter(Boolean)
+                    .join(' · ');
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => gotoPerson(item.id)}
+                      style={[styles.row, last ? null : styles.rowDivider]}
+                    >
+                      <Avatar firstName={item.firstName} lastName={item.lastName} size={40} />
+                      <View style={styles.rowBody}>
+                        <Text style={styles.rowName}>
+                          {`${item.firstName} ${item.lastName}`}
+                        </Text>
+                        {subtitle ? (
+                          <Text style={styles.rowSubtitle} numberOfLines={1}>
+                            {subtitle}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </>
+        )}
+
+        <View style={{ height: 80 }} />
+      </ScrollView>
+    </View>
+  );
+}
+
+function EmptyState({ onAddFirst }: { onAddFirst: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyMedallion}>
+        <Icon source="account-group-outline" size={56} color={colorsLight.primary} />
+      </View>
+      <Text style={styles.emptyTitle}>Your people, in one place</Text>
+      <Text style={styles.emptySubtitle}>
+        Add someone you care about. Track birthdays, gift ideas, and the moments worth remembering.
+      </Text>
+      <PrimaryButton label="Add your first person" onPress={onAddFirst} />
+      <Pressable hitSlop={6} style={{ marginTop: 16 }}>
+        <Text style={styles.emptySecondary}>Import from Contacts</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: colorsLight.bg,
   },
-  searchContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+  scroll: {
+    paddingBottom: 16,
   },
-  searchbar: {
-    borderRadius: 12,
-    elevation: 0,
+  searchWrap: {
+    paddingTop: 4,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colorsLight.raised,
+    borderRadius: radius.md,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    color: colorsLight.text,
+    paddingVertical: 0,
+    margin: 0,
+    includeFontPadding: false,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  filterChip: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  filterChipDefault: {
+    backgroundColor: colorsLight.surface,
+    borderColor: colorsLight.border,
+  },
+  filterChipSelected: {
+    backgroundColor: colorsLight.text,
+    borderColor: colorsLight.text,
+  },
+  filterChipLabel: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 13,
+    includeFontPadding: false,
+  },
+  listGroup: {
+    marginHorizontal: 16,
+    backgroundColor: colorsLight.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colorsLight.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colorsLight.border,
+  },
+  rowBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rowName: {
+    fontFamily: fontFamily.semibold,
+    fontWeight: '600',
+    fontSize: 15,
+    color: colorsLight.text,
+    letterSpacing: -0.1,
+    includeFontPadding: false,
+  },
+  rowSubtitle: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 13,
+    color: colorsLight.textMuted,
+    marginTop: 1,
+    includeFontPadding: false,
   },
   center: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: 96,
-    gap: 10,
-  },
-  card: {
-    borderRadius: 14,
-    elevation: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  cardLeft: {
-    marginRight: spacing.md,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
     paddingTop: 80,
   },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.xl,
-    borderRadius: 16,
+  errorTitle: {
+    marginTop: 12,
+    fontFamily: fontFamily.semibold,
+    fontWeight: '600',
+    fontSize: 16,
+    color: colorsLight.text,
+  },
+  errorBody: {
+    marginTop: 4,
+    fontFamily: fontFamily.regular,
+    color: colorsLight.textMuted,
+    textAlign: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: fontFamily.regular,
+    color: colorsLight.textMuted,
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 32,
+  },
+  emptyMedallion: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colorsLight.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    fontSize: 24,
+    letterSpacing: -0.5,
+    color: colorsLight.text,
+    marginBottom: 8,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  emptySubtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 15,
+    color: colorsLight.textMuted,
+    lineHeight: 22,
+    maxWidth: 300,
+    marginBottom: 28,
+    textAlign: 'center',
+  },
+  emptySecondary: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 14,
+    color: colorsLight.textMuted,
+  },
+  emptyFiltered: {
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  emptyFilteredText: {
+    fontFamily: fontFamily.regular,
+    color: colorsLight.textMuted,
   },
 });

@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { TextInput } from 'react-native-paper';
-import DateInput from '../inputs/DateInput';
 import FormModal from './FormModal';
+import FieldGroup from '../ui/FieldGroup';
+import FieldRow from '../ui/FieldRow';
+import DateInput from '../inputs/DateInput';
 import type { UpcomingEventFormData } from '../../types';
 
 export type UpcomingEventForm = UpcomingEventFormData;
@@ -33,9 +34,23 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
       onSave={() => onSave({ title, date, notes })}
       saveDisabled={!title.trim()}
     >
-      <TextInput label="Title" value={title} onChangeText={setTitle} style={{ marginBottom: 8 }} />
-      <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
-      <TextInput label="Notes" value={notes} onChangeText={setNotes} style={{ marginBottom: 8 }} />
+      <FieldGroup>
+        <FieldRow
+          label="Title"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Required"
+          required
+        />
+        <DateInput label="Date" value={date} onChange={(v) => setDate(v)} />
+        <FieldRow
+          label="Notes"
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Optional"
+          multiline
+        />
+      </FieldGroup>
     </FormModal>
   );
 }

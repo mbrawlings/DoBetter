@@ -1,9 +1,12 @@
 import * as React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Card, IconButton, Button, Text, useTheme } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Icon, Text } from 'react-native-paper';
 import TextModal from '../modals/TextModal';
 import UpcomingEventModal, { UpcomingEventForm } from '../modals/UpcomingEventModal';
-import { spacing } from '../../theme/theme';
+import ItemCard from '../ui/ItemCard';
+import SectionLabel from '../ui/SectionLabel';
+import { colorsLight, fontFamily } from '../../theme/theme';
+import { formatHumanDate } from '../inputs/DateInput';
 
 type CurrentEventsProps = {
   currentEvents: string[];
@@ -39,110 +42,68 @@ export default function EventsSection({
   const [editUpcomingIdx, setEditUpcomingIdx] = React.useState<number | null>(null);
   const [upcomingInitial, setUpcomingInitial] = React.useState<UpcomingEventForm | undefined>(undefined);
 
-  const theme = useTheme();
-
   return (
-    <View style={styles.container}>
-      {/* Current Events */}
-      <Text style={[styles.sectionHeader, { color: theme.colors.onSurfaceVariant }]}>
-        Current Events
-      </Text>
-      {currentEvents.map((ce, idx) => (
-        <Card
-          key={`${ce}-${idx}`}
-          style={[styles.card, { backgroundColor: theme.colors.surface }]}
-          mode="elevated"
-        >
-          <Card.Title
-            title={ce}
-            titleStyle={styles.cardTitle}
-            right={() => (
-              <View style={styles.actions}>
-                {onEditCurrent && (
-                  <IconButton
-                    icon="pencil-outline"
-                    size={20}
-                    iconColor={theme.colors.onSurfaceVariant}
-                    onPress={() => { setEditCurrentIdx(idx); setCurrentInitial(ce); setCurrentVisible(true); }}
-                  />
-                )}
-                {onDeleteCurrent && (
-                  <IconButton
-                    icon="trash-can-outline"
-                    size={20}
-                    iconColor={theme.colors.outline}
-                    onPress={() => onDeleteCurrent(idx)}
-                  />
-                )}
-              </View>
-            )}
-          />
-        </Card>
-      ))}
-      <Button
-        icon="plus"
-        mode="text"
-        textColor={theme.colors.primary}
-        onPress={() => { setEditCurrentIdx(null); setCurrentInitial(''); setCurrentVisible(true); }}
-        style={styles.addButton}
-        compact
-      >
-        Add current event
-      </Button>
+    <View>
+      <SectionLabel>What's going on</SectionLabel>
+      <View style={styles.stack}>
+        {currentEvents.map((ce, idx) => (
+          <ItemCard
+            key={`${ce}-${idx}`}
+            leadingDot
+            trailing="pencil"
+            onPress={() => {
+              if (!onEditCurrent) return;
+              setEditCurrentIdx(idx);
+              setCurrentInitial(ce);
+              setCurrentVisible(true);
+            }}
+          >
+            <Text style={styles.bodyText}>{ce}</Text>
+          </ItemCard>
+        ))}
+        <AddLink
+          label="Add current event"
+          onPress={() => {
+            setEditCurrentIdx(null);
+            setCurrentInitial('');
+            setCurrentVisible(true);
+          }}
+        />
+      </View>
 
-      {/* Upcoming Events */}
-      <Text style={[styles.sectionHeader, { color: theme.colors.onSurfaceVariant, marginTop: spacing.lg }]}>
-        Upcoming Events
-      </Text>
-      {upcomingEvents.map((ue, idx) => (
-        <Card
-          key={`${ue.title}-${idx}`}
-          style={[styles.card, { backgroundColor: theme.colors.surface }]}
-          mode="elevated"
-        >
-          <Card.Title
-            title={ue.title}
-            titleStyle={styles.cardTitle}
-            subtitle={[ue.date, ue.notes].filter(Boolean).join(' \u2022 ')}
-            subtitleStyle={[styles.cardSubtitle, { color: theme.colors.onSurfaceVariant }]}
-            right={() => (
-              <View style={styles.actions}>
-                {onEditUpcoming && (
-                  <IconButton
-                    icon="pencil-outline"
-                    size={20}
-                    iconColor={theme.colors.onSurfaceVariant}
-                    onPress={() => { setEditUpcomingIdx(idx); setUpcomingInitial({ title: ue.title, date: ue.date, notes: ue.notes }); setUpcomingVisible(true); }}
-                  />
-                )}
-                {onDeleteUpcoming && (
-                  <IconButton
-                    icon="trash-can-outline"
-                    size={20}
-                    iconColor={theme.colors.outline}
-                    onPress={() => onDeleteUpcoming(idx)}
-                  />
-                )}
-              </View>
-            )}
-          />
-        </Card>
-      ))}
-      <Button
-        icon="plus"
-        mode="text"
-        textColor={theme.colors.primary}
-        onPress={() => { setEditUpcomingIdx(null); setUpcomingInitial({ title: '', date: '', notes: '' }); setUpcomingVisible(true); }}
-        style={styles.addButton}
-        compact
-      >
-        Add upcoming event
-      </Button>
+      <SectionLabel>Upcoming</SectionLabel>
+      <View style={styles.stack}>
+        {upcomingEvents.map((ue, idx) => {
+          const subtitle = [formatHumanDate(ue.date ?? ''), ue.notes].filter(Boolean).join(' · ');
+          return (
+            <ItemCard
+              key={`${ue.title}-${idx}`}
+              title={ue.title}
+              subtitle={subtitle || undefined}
+              iconBlock={{ icon: 'cake-variant-outline' }}
+              trailing="chevron"
+              onPress={() => {
+                if (!onEditUpcoming) return;
+                setEditUpcomingIdx(idx);
+                setUpcomingInitial({ title: ue.title, date: ue.date, notes: ue.notes });
+                setUpcomingVisible(true);
+              }}
+            />
+          );
+        })}
+        <AddLink
+          label="Add upcoming event"
+          onPress={() => {
+            setEditUpcomingIdx(null);
+            setUpcomingInitial({ title: '', date: '', notes: '' });
+            setUpcomingVisible(true);
+          }}
+        />
+      </View>
 
-      {/* Modals */}
       <TextModal
         visible={currentVisible}
-        title={editCurrentIdx !== null ? 'Edit Current Event' : 'Add Current Event'}
+        title={editCurrentIdx !== null ? 'Edit current event' : 'New current event'}
         label="Event"
         initialValue={currentInitial}
         onDismiss={() => setCurrentVisible(false)}
@@ -158,7 +119,7 @@ export default function EventsSection({
 
       <UpcomingEventModal
         visible={upcomingVisible}
-        titleText={editUpcomingIdx !== null ? 'Edit Upcoming Event' : 'Add Upcoming Event'}
+        titleText={editUpcomingIdx !== null ? 'Edit upcoming event' : 'New upcoming event'}
         initial={upcomingInitial}
         onDismiss={() => setUpcomingVisible(false)}
         onSave={(form) => {
@@ -174,36 +135,41 @@ export default function EventsSection({
   );
 }
 
+function AddLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={6} style={styles.addLink}>
+      <Icon source="plus" size={16} color={colorsLight.primary} />
+      <Text style={styles.addLinkLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    marginTop: spacing.lg,
+  stack: {
+    marginHorizontal: 16,
+    gap: 8,
   },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  card: {
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-    elevation: 1,
-  },
-  cardTitle: {
+  bodyText: {
+    fontFamily: fontFamily.regular,
     fontSize: 15,
-    fontWeight: '500',
+    color: colorsLight.text,
+    letterSpacing: -0.1,
+    includeFontPadding: false,
   },
-  cardSubtitle: {
-    fontSize: 13,
+  addLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    alignSelf: 'flex-start',
     marginTop: 2,
   },
-  actions: {
-    flexDirection: 'row',
-  },
-  addButton: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.xs,
+  addLinkLabel: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 14,
+    color: colorsLight.primary,
+    includeFontPadding: false,
   },
 });

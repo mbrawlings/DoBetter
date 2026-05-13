@@ -1,8 +1,11 @@
 import * as React from 'react';
-import { TextInput } from 'react-native-paper';
-import SelectInput from '../inputs/SelectInput';
-import DateInput from '../inputs/DateInput';
+import { StyleSheet, View } from 'react-native';
 import FormModal from './FormModal';
+import FieldGroup from '../ui/FieldGroup';
+import FieldRow from '../ui/FieldRow';
+import SectionLabel from '../ui/SectionLabel';
+import ChipGroup from '../ui/ChipGroup';
+import DateInput from '../inputs/DateInput';
 import { INTERACTION_CHANNEL_OPTIONS } from '../../constants/options';
 import type { InteractionFormData } from '../../types';
 
@@ -37,10 +40,38 @@ export default function InteractionModal({ visible, titleText, initial, onDismis
       onSave={() => onSave({ summary, date, channel, location })}
       saveDisabled={!summary.trim()}
     >
-      <TextInput label="Summary" value={summary} onChangeText={setSummary} style={{ marginBottom: 8 }} />
-      <DateInput label="Date" value={date} onChange={(v) => setDate(v)} style={{ marginBottom: 8 }} />
-      <SelectInput label="Channel" value={channel} onChange={setChannel} options={INTERACTION_CHANNEL_OPTIONS as unknown as string[]} style={{ marginBottom: 8 }} />
-      <TextInput label="Location" value={location} onChangeText={setLocation} style={{ marginBottom: 8 }} />
+      <FieldGroup>
+        <FieldRow
+          label="Summary"
+          value={summary}
+          onChangeText={setSummary}
+          placeholder="Required"
+          required
+          multiline
+        />
+        <DateInput label="Date" value={date} onChange={(v) => setDate(v)} />
+        <FieldRow
+          label="Location"
+          value={location}
+          onChangeText={setLocation}
+          placeholder="Optional"
+        />
+      </FieldGroup>
+
+      <SectionLabel>Channel</SectionLabel>
+      <View style={styles.chipsWrap}>
+        <ChipGroup
+          options={INTERACTION_CHANNEL_OPTIONS as unknown as string[]}
+          value={channel}
+          onSelect={(v) => setChannel(channel === v ? '' : v)}
+        />
+      </View>
     </FormModal>
   );
 }
+
+const styles = StyleSheet.create({
+  chipsWrap: {
+    paddingHorizontal: 16,
+  },
+});

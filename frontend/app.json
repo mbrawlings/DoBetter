@@ -27,6 +27,9 @@
     },
     "extra": {
       "EXPO_PUBLIC_GRAPHQL_URL": ""
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

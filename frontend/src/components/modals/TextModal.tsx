@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { TextInput } from 'react-native-paper';
 import FormModal from './FormModal';
+import FieldGroup from '../ui/FieldGroup';
+import FieldRow from '../ui/FieldRow';
 
 type Props = {
   visible: boolean;
@@ -26,7 +27,16 @@ export default function TextModal({ visible, title, label, initialValue, onDismi
       onSave={() => onSave(value)}
       saveDisabled={!value.trim()}
     >
-      <TextInput label={label} value={value} onChangeText={setValue} style={{ marginBottom: 8 }} />
+      <FieldGroup>
+        <FieldRow
+          label={label}
+          value={value}
+          onChangeText={setValue}
+          placeholder="Required"
+          required
+          multiline
+        />
+      </FieldGroup>
     </FormModal>
   );
 }

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DoBetter · Direction A — Warm & human (reference)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  html, body { margin: 0; padding: 0; background: #F2EDE3; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #1B1714; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 56px 32px 80px; }
+  .hd { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 8px 24px; border-bottom: 1px solid #DCD3BF; margin-bottom: 40px; }
+  .hd h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.6; margin: 0; }
+  .hd .meta { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; color: #76716A; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 420px)); gap: 32px; justify-content: center; }
+  .screen-label { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; color: #76716A; text-align: center; margin: 0 0 12px; }
+  .section { margin-bottom: 72px; }
+  .section h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.3; margin: 0 8px 4px; }
+  .section .sub { color: #6F6860; margin: 0 8px 28px; font-size: 14px; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="hd">
+    <div>
+      <h1>DoBetter — Direction A · Warm & human</h1>
+      <div style="font-size:14px; color:#6F6860; margin-top:6px;">High-fidelity reference. Open alongside the README and source code.</div>
+    </div>
+    <span class="meta">v1 · iOS</span>
+  </div>
+  <div id="root"></div>
+</div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="direction-a.jsx"></script>
+<script type="text/babel" src="style-guide.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+function Section({ title, sub, children }) {
+  return (
+    <div className="section">
+      <h2>{title}</h2>
+      <p className="sub">{sub}</p>
+      <div className="row">{children}</div>
+    </div>
+  );
+}
+function Slot({ label, children }) {
+  return (
+    <div>
+      <p className="screen-label">{label}</p>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>{children}</div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <Section title="Foundations" sub="Palette, type scale, components, spacing.">
+        <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center' }}>
+          <FoundationA/>
+        </div>
+      </Section>
+      <Section title="Screens" sub="Home, empty state, create form, edit form, modal sheet.">
+        <Slot label="Home · list">     <AHome/></Slot>
+        <Slot label="Empty state">      <AEmpty/></Slot>
+        <Slot label="Create · empty">   <ACreateForm/></Slot>
+        <Slot label="Edit · filled">    <APersonForm/></Slot>
+        <Slot label="Modal · gift idea"><AGiftModal/></Slot>
+      </Section>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

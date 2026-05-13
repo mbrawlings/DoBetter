@@ -1,18 +1,29 @@
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Portal, Modal, Text, Button, TextInput } from 'react-native-paper';
+import { Button, Modal, Portal, Text } from 'react-native-paper';
+import FieldRow from '../ui/FieldRow';
+import { colorsLight, fontFamily } from '../../theme/theme';
 import { formatDateYmd } from '../../utils/date';
 
 type Props = {
   label: string;
-  value: string; // YYYY-MM-DD or empty
+  value: string;
   onChange: (value: string, date?: Date) => void;
-  mode?: 'flat' | 'outlined';
-  style?: any;
+  required?: boolean;
+  placeholder?: string;
 };
 
-export default function DateInput({ label, value, onChange, mode, style }: Props) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function formatHumanDate(value: string): string {
+  if (!value) return '';
+  const [yyyy, mm, dd] = value.split('-').map(Number);
+  if (!yyyy || !mm || !dd) return value;
+  return `${MONTHS[mm - 1]} ${dd}, ${yyyy}`;
+}
+
+export default function DateInput({ label, value, onChange, required, placeholder }: Props) {
   const [dateObj, setDateObj] = React.useState<Date | undefined>(value ? new Date(value) : undefined);
   const [showPickerAndroid, setShowPickerAndroid] = React.useState(false);
   const [iosModalVisible, setIosModalVisible] = React.useState(false);
@@ -35,18 +46,23 @@ export default function DateInput({ label, value, onChange, mode, style }: Props
     }
   }
 
+  const display = formatHumanDate(value);
+
+  const row = (
+    <FieldRow
+      label={label}
+      value={display}
+      placeholder={placeholder ?? 'Select date'}
+      required={required}
+      variant="date"
+      onPress={openPicker}
+    />
+  );
+
   if (Platform.OS === 'web') {
     return (
       <View>
-        <TextInput
-          label={label}
-          value={value}
-          editable={false}
-          mode={mode}
-          right={<TextInput.Icon icon="calendar" onPress={openPicker} />}
-          onPressIn={openPicker}
-          style={style}
-        />
+        {row}
         <input
           ref={webInputRef}
           type="date"
@@ -77,15 +93,7 @@ export default function DateInput({ label, value, onChange, mode, style }: Props
 
   return (
     <>
-      <TextInput
-        label={label}
-        value={value}
-        editable={false}
-        mode={mode}
-        right={<TextInput.Icon icon="calendar" onPress={openPicker} />}
-        onPressIn={openPicker}
-        style={style}
-      />
+      {row}
       {Platform.OS === 'android' && showPickerAndroid && (
         <DateTimePicker
           value={dateObj ?? new Date()}
@@ -102,12 +110,42 @@ export default function DateInput({ label, value, onChange, mode, style }: Props
       )}
       {Platform.OS === 'ios' && (
         <Portal>
-          <Modal visible={iosModalVisible} onDismiss={() => setIosModalVisible(false)} contentContainerStyle={{ backgroundColor: 'white', marginHorizontal: 16, borderRadius: 12, padding: 16 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 8 }}>Select Date</Text>
-            <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={(_, date) => { if (date) setTempDate(date); }} style={{ marginBottom: 12 }} />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <Modal
+            visible={iosModalVisible}
+            onDismiss={() => setIosModalVisible(false)}
+            contentContainerStyle={{
+              backgroundColor: colorsLight.surface,
+              marginHorizontal: 16,
+              borderRadius: 16,
+              padding: 16,
+            }}
+          >
+            <Text style={{ fontFamily: fontFamily.semibold, fontSize: 16, marginBottom: 8, color: colorsLight.text }}>
+              Select date
+            </Text>
+            <DateTimePicker
+              value={tempDate}
+              mode="date"
+              display="spinner"
+              onChange={(_event: unknown, date?: Date) => {
+                if (date) setTempDate(date);
+              }}
+              style={{ marginBottom: 12 }}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
               <Button onPress={() => setIosModalVisible(false)}>Cancel</Button>
-              <Button mode="contained" onPress={() => { setDateObj(tempDate); onChange(formatDateYmd(tempDate), tempDate); setIosModalVisible(false); }}>Done</Button>
+              <Button
+                mode="contained"
+                buttonColor={colorsLight.primary}
+                textColor={colorsLight.primaryFg}
+                onPress={() => {
+                  setDateObj(tempDate);
+                  onChange(formatDateYmd(tempDate), tempDate);
+                  setIosModalVisible(false);
+                }}
+              >
+                Done
+              </Button>
             </View>
           </Modal>
         </Portal>

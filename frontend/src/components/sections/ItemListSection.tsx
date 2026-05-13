@@ -1,7 +1,9 @@
 import * as React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Card, IconButton, Button, Text, useTheme } from 'react-native-paper';
-import { spacing } from '../../theme/theme';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Icon, Text } from 'react-native-paper';
+import ItemCard from '../ui/ItemCard';
+import SectionLabel from '../ui/SectionLabel';
+import { colorsLight, fontFamily } from '../../theme/theme';
 
 type ModalProps<F> = {
   visible: boolean;
@@ -36,66 +38,49 @@ export default function ItemListSection<T, F>({
   renderModal,
   onAdd,
   onEdit,
-  onDelete,
 }: Props<T, F>) {
   const [visible, setVisible] = React.useState(false);
   const [editIdx, setEditIdx] = React.useState<number | null>(null);
   const [initial, setInitial] = React.useState<F>(emptyForm);
-  const theme = useTheme();
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.sectionHeader, { color: theme.colors.onSurfaceVariant }]}>
-        {sectionTitle}
-      </Text>
-      {items.map((item, idx) => (
-        <Card
-          key={`${getTitle(item)}-${idx}`}
-          style={[styles.card, { backgroundColor: theme.colors.surface }]}
-          mode="elevated"
-        >
-          <Card.Title
+    <View>
+      <SectionLabel>{`${sectionTitle} · ${items.length}`}</SectionLabel>
+      <View style={styles.stack}>
+        {items.map((item, idx) => (
+          <ItemCard
+            key={`${getTitle(item)}-${idx}`}
             title={getTitle(item)}
-            titleStyle={styles.cardTitle}
-            subtitle={getSubtitle(item)}
-            subtitleStyle={[styles.cardSubtitle, { color: theme.colors.onSurfaceVariant }]}
-            right={() => (
-              <View style={styles.actions}>
-                {onEdit && (
-                  <IconButton
-                    icon="pencil-outline"
-                    size={20}
-                    iconColor={theme.colors.onSurfaceVariant}
-                    onPress={() => { setEditIdx(idx); setInitial(toForm(item)); setVisible(true); }}
-                  />
-                )}
-                {onDelete && (
-                  <IconButton
-                    icon="trash-can-outline"
-                    size={20}
-                    iconColor={theme.colors.outline}
-                    onPress={() => onDelete(idx)}
-                  />
-                )}
-              </View>
-            )}
+            subtitle={getSubtitle(item) || undefined}
+            trailing="chevron"
+            onPress={() => {
+              if (!onEdit) return;
+              setEditIdx(idx);
+              setInitial(toForm(item));
+              setVisible(true);
+            }}
           />
-        </Card>
-      ))}
-      <Button
-        icon="plus"
-        mode="text"
-        textColor={theme.colors.primary}
-        onPress={() => { setEditIdx(null); setInitial(emptyForm); setVisible(true); }}
-        style={styles.addButton}
-        compact
-      >
-        {addLabel}
-      </Button>
+        ))}
+        <Pressable
+          onPress={() => {
+            setEditIdx(null);
+            setInitial(emptyForm);
+            setVisible(true);
+          }}
+          hitSlop={6}
+          style={styles.addLink}
+        >
+          <Icon source="plus" size={16} color={colorsLight.primary} />
+          <Text style={styles.addLinkLabel}>{addLabel}</Text>
+        </Pressable>
+      </View>
 
       {renderModal({
         visible,
-        titleText: editIdx !== null ? `Edit ${sectionTitle.replace(/s$/, '')}` : `Add ${sectionTitle.replace(/s$/, '')}`,
+        titleText:
+          editIdx !== null
+            ? `Edit ${sectionTitle.replace(/s$/, '')}`
+            : `New ${sectionTitle.replace(/s$/, '')}`,
         initial,
         onDismiss: () => setVisible(false),
         onSave: (form: F) => {
@@ -112,35 +97,24 @@ export default function ItemListSection<T, F>({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: spacing.lg,
+  stack: {
+    marginHorizontal: 16,
+    gap: 8,
   },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  card: {
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-    elevation: 1,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  cardSubtitle: {
-    fontSize: 13,
+  addLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    alignSelf: 'flex-start',
     marginTop: 2,
   },
-  actions: {
-    flexDirection: 'row',
-  },
-  addButton: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.xs,
+  addLinkLabel: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 14,
+    color: colorsLight.primary,
+    includeFontPadding: false,
   },
 });
