@@ -21,7 +21,7 @@ app.use(
   '/graphql',
   expressMiddleware(server, {
     context: async ({ req }) => {
-      const devBypass = process.env.DEV_ALLOW_UNAUTH === 'true' || !process.env.JWT_SECRET;
+      const devBypass = process.env.DEV_ALLOW_UNAUTH === 'true';
       const token = req.headers.authorization?.replace('Bearer ', '');
       let orgId = null;
       if (token && process.env.JWT_SECRET) {
@@ -31,9 +31,6 @@ app.use(
       }
       if (!orgId && devBypass) {
         orgId = '000000000000000000000000';
-      }
-      if (!orgId) {
-        throw new Error('Unauthorized');
       }
       return { orgId };
     },

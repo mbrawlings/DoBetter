@@ -1,6 +1,9 @@
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, from } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+import { onError } from '@apollo/client/link/error';
 import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
+import { getToken, clearToken } from './tokenStorage';
 
 export function resolveGraphqlUri(): string {
   if (process.env.EXPO_PUBLIC_GRAPHQL_URL) {
@@ -34,8 +37,34 @@ if (__DEV__) {
   console.log('Using GraphQL endpoint:', graphqlUri);
 }
 
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
+const authLink = setContext(async (_, { headers }) => {
+  const token = await getToken();
+  return {
+    headers: {
+      ...headers,
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+  };
+});
+
+const errorLink = onError(({ graphQLErrors }) => {
+  const isUnauthorized = graphQLErrors?.some((e) => e.message === 'Unauthorized');
+  if (isUnauthorized) {
+    void clearToken();
+    unauthorizedHandler?.();
+  }
+});
+
+const httpLink = new HttpLink({ uri: graphqlUri });
+
 export const apolloClient = new ApolloClient({
-  link: new HttpLink({ uri: graphqlUri }),
+  link: from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache(),
 });
 

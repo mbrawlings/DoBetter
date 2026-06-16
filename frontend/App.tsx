@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import RootNavigator from './src/navigation/RootNavigator';
 import { apolloClient } from './src/providers/apollo';
+import { AuthProvider } from './src/providers/AuthContext';
 import { theme } from './src/theme/theme';
 
 export default function App() {
@@ -32,11 +33,13 @@ export default function App() {
 
   return (
     <ApolloProvider client={apolloClient}>
-      <SafeAreaProvider>
-        <PaperProvider theme={theme}>
-          <RootNavigator />
-        </PaperProvider>
-      </SafeAreaProvider>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <PaperProvider theme={theme}>
+            <RootNavigator />
+          </PaperProvider>
+        </SafeAreaProvider>
+      </AuthProvider>
     </ApolloProvider>
   );
 }
