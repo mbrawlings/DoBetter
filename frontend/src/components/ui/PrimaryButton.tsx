@@ -15,19 +15,22 @@ type Props = {
   full?: boolean;
   loading?: boolean;
   disabled?: boolean;
+  tone?: 'primary' | 'danger';
   style?: ViewStyle;
 };
 
-export default function PrimaryButton({ label, onPress, full, loading, disabled, style }: Props) {
+export default function PrimaryButton({ label, onPress, full, loading, disabled, tone = 'primary', style }: Props) {
   const isDisabled = disabled || loading;
+  const isDanger = tone === 'danger';
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }: { pressed: boolean }) => [
         styles.button,
+        isDanger ? styles.danger : null,
         full ? styles.full : null,
-        !isDisabled ? shadows.primaryButton : null,
+        !isDisabled && !isDanger ? shadows.primaryButton : null,
         isDisabled ? styles.disabled : null,
         pressed && !isDisabled ? styles.pressed : null,
         style,
@@ -54,6 +57,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'flex-start',
     minHeight: 50,
+  },
+  danger: {
+    backgroundColor: colorsLight.danger,
   },
   full: {
     alignSelf: 'stretch',

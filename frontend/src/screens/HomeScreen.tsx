@@ -75,6 +75,9 @@ export default function HomeScreen() {
   function gotoPerson(id: string) {
     (navigation as any).navigate('Person' as never, { id } as never);
   }
+  function gotoAccount() {
+    (navigation as any).navigate('Account' as never);
+  }
 
   const filtered = persons.filter((p) => passesFilter(p, filter));
 
@@ -82,7 +85,12 @@ export default function HomeScreen() {
     <NavBar
       title="People"
       large
-      trailing={<NavIconAction icon="plus" onPress={gotoNew} accessibilityLabel="Add person" />}
+      trailing={
+        <View style={styles.headerActions}>
+          <NavIconAction icon="account-circle-outline" onPress={gotoAccount} accessibilityLabel="Account" />
+          <NavIconAction icon="plus" onPress={gotoNew} accessibilityLabel="Add person" />
+        </View>
+      }
     />
   );
 
@@ -244,6 +252,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colorsLight.bg,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   scroll: {
     paddingBottom: 16,

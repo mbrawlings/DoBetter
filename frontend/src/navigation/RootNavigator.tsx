@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import PersonFormScreen from '../screens/PersonFormScreen';
 import LoginScreen from '../screens/LoginScreen';
+import AccountScreen from '../screens/AccountScreen';
 import { useAuth } from '../providers/AuthContext';
 import { colorsLight } from '../theme/theme';
 
@@ -40,6 +41,7 @@ export default function RootNavigator() {
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Person" component={PersonFormScreen} />
+            <Stack.Screen name="Account" component={AccountScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
