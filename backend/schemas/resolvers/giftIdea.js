@@ -1,4 +1,4 @@
-import GiftIdea from '../../db/models/GiftIdea.js';
+import GiftIdea from '../../db/models/giftIdea.js';
 
 const Query = {
   async giftIdeas(_, { personId }, { orgId }) {

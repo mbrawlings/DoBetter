@@ -1,4 +1,4 @@
-import Interaction from '../../db/models/Interaction.js';
+import Interaction from '../../db/models/interaction.js';
 
 const Query = {
   async interactions(_, { personId }, { orgId }) {

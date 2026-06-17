@@ -1,4 +1,4 @@
-import Person from '../../db/models/Person.js';
+import Person from '../../db/models/person.js';
 
 const Query = {
   async persons(_, { filter }, { orgId }) {
