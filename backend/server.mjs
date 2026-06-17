@@ -39,6 +39,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions), express.json());
 
+// Lightweight health checks for the host's uptime probes (no auth, no DB hit).
+app.get(['/', '/healthz'], (_req, res) => res.status(200).json({ status: 'ok' }));
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
