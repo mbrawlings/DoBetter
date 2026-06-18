@@ -33,17 +33,13 @@ export default function DateInput({ label, value, onChange, required, placeholde
   const [showPickerAndroid, setShowPickerAndroid] = React.useState(false);
   const [iosModalVisible, setIosModalVisible] = React.useState(false);
   const [tempDate, setTempDate] = React.useState<Date>(dateObj ?? new Date());
-  const webInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     setDateObj(value ? new Date(value) : undefined);
   }, [value]);
 
   function openPicker() {
-    if (Platform.OS === 'web') {
-      webInputRef.current?.showPicker?.();
-      webInputRef.current?.click();
-    } else if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       setTempDate(dateObj ?? new Date());
       setIosModalVisible(true);
     } else {
@@ -60,16 +56,18 @@ export default function DateInput({ label, value, onChange, required, placeholde
       placeholder={placeholder ?? 'Select date'}
       required={required}
       variant="date"
-      onPress={openPicker}
+      onPress={Platform.OS === 'web' ? undefined : openPicker}
     />
   );
 
   if (Platform.OS === 'web') {
+    // Overlay a real, full-size, transparent date input so the user's tap lands
+    // directly on it. iOS Safari only opens the native picker from a genuine tap
+    // on the input itself (programmatic .click()/showPicker() do not work there).
     return (
-      <View>
+      <View style={{ position: 'relative' }}>
         {row}
         <input
-          ref={webInputRef}
           type="date"
           value={toYmd(value)}
           onChange={(e) => {
@@ -85,11 +83,17 @@ export default function DateInput({ label, value, onChange, required, placeholde
           }}
           style={{
             position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            margin: 0,
+            padding: 0,
+            border: 'none',
             opacity: 0,
-            width: 1,
-            height: 1,
-            overflow: 'hidden',
-            pointerEvents: 'none',
+            cursor: 'pointer',
           }}
         />
       </View>
