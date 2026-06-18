@@ -20,6 +20,7 @@ import {
   PrimaryButton,
   SectionLabel,
 } from '../components/ui';
+import SortSheet, { SortBy } from '../components/modals/SortSheet';
 
 type Person = {
   id: string;
@@ -27,7 +28,37 @@ type Person = {
   lastName: string;
   city?: string | null;
   relationship?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
+
+const SORT_LABELS: Record<SortBy, string> = {
+  recent: 'Recent',
+  az: 'A–Z',
+  za: 'Z–A',
+};
+
+function fullName(p: Person): string {
+  return `${p.firstName} ${p.lastName}`;
+}
+
+function sortPersons(list: Person[], sortBy: SortBy): Person[] {
+  const arr = [...list];
+  switch (sortBy) {
+    case 'recent':
+      return arr.sort(
+        (a, b) => +new Date(b.updatedAt ?? 0) - +new Date(a.updatedAt ?? 0),
+      );
+    case 'az':
+      return arr.sort((a, b) => fullName(a).localeCompare(fullName(b)));
+    case 'za':
+      return arr.sort((a, b) => fullName(b).localeCompare(fullName(a)));
+    default: {
+      const _exhaustive: never = sortBy;
+      return arr;
+    }
+  }
+}
 
 const FILTERS = ['All', 'Family', 'Friends', 'Work', 'Need to reach out'] as const;
 type Filter = (typeof FILTERS)[number];
@@ -68,6 +99,8 @@ export default function HomeScreen() {
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [filter, setFilter] = React.useState<Filter>('All');
+  const [sortBy, setSortBy] = React.useState<SortBy>('recent');
+  const [sortSheetVisible, setSortSheetVisible] = React.useState(false);
 
   function gotoNew() {
     (navigation as any).navigate('Person' as never);
@@ -80,6 +113,7 @@ export default function HomeScreen() {
   }
 
   const filtered = persons.filter((p) => passesFilter(p, filter));
+  const sorted = React.useMemo(() => sortPersons(filtered, sortBy), [filtered, sortBy]);
 
   const Header = (
     <NavBar
@@ -185,17 +219,22 @@ export default function HomeScreen() {
           <EmptyState onAddFirst={gotoNew} />
         ) : (
           <>
-            <SectionLabel action={{ label: 'Sort: Recent' }}>
-              {`All people · ${filtered.length}`}
+            <SectionLabel
+              action={{
+                label: `Sort: ${SORT_LABELS[sortBy]}`,
+                onPress: () => setSortSheetVisible(true),
+              }}
+            >
+              {`All people · ${sorted.length}`}
             </SectionLabel>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <View style={styles.emptyFiltered}>
                 <Text style={styles.emptyFilteredText}>No people match this filter.</Text>
               </View>
             ) : (
               <View style={styles.listGroup}>
-                {filtered.map((item, index) => {
-                  const last = index === filtered.length - 1;
+                {sorted.map((item, index) => {
+                  const last = index === sorted.length - 1;
                   const subtitle = [item.relationship, item.city]
                     .filter(Boolean)
                     .join(' · ');
@@ -226,6 +265,16 @@ export default function HomeScreen() {
 
         <View style={{ height: 80 }} />
       </ScrollView>
+
+      <SortSheet
+        visible={sortSheetVisible}
+        value={sortBy}
+        onSelect={(value) => {
+          setSortBy(value);
+          setSortSheetVisible(false);
+        }}
+        onDismiss={() => setSortSheetVisible(false)}
+      />
     </View>
   );
 }

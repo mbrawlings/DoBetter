@@ -37,6 +37,14 @@
         height: 100%;
         flex: 1;
       }
+      /* Remove the browser's default blue focus ring on form fields.
+         This app targets mobile; web is only served for convenience, so the
+         native focus outline is unwanted visual noise. */
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+      }
       /* Make the whole date field open the native picker on click/tap,
          not just the calendar indicator on the right edge. */
       input[type="date"]::-webkit-calendar-picker-indicator {

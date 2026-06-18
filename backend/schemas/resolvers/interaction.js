@@ -1,4 +1,5 @@
 import Interaction from '../../db/models/interaction.js';
+import { touchPerson } from './_touchPerson.js';
 
 const Query = {
   async interactions(_, { personId }, { orgId }) {
@@ -9,6 +10,7 @@ const Query = {
 const Mutation = {
   async createInteraction(_, { input }, { orgId }) {
     const doc = await Interaction.create({ ...input, orgId });
+    await touchPerson(input.personId, orgId);
     return doc.toObject();
   },
 };

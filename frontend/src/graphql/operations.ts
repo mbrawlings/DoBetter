@@ -31,6 +31,8 @@ export const PERSONS_QUERY = gql`
       lastName
       relationship
       city
+      createdAt
+      updatedAt
     }
   }
 `;

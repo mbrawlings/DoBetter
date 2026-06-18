@@ -58,7 +58,7 @@ function buildPersonInput(fields: {
   if (fields.workRole) input.workRole = fields.workRole;
   if (fields.relationship) input.relationship = fields.relationship;
   if (fields.birthDate) input.birthDate = fields.birthDate;
-  if (fields.interests.length) input.interests = fields.interests;
+  input.interests = fields.interests;
   return input;
 }
 
