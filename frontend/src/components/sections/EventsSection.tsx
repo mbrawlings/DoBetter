@@ -6,7 +6,7 @@ import UpcomingEventModal, { UpcomingEventForm } from '../modals/UpcomingEventMo
 import ItemCard from '../ui/ItemCard';
 import SectionLabel from '../ui/SectionLabel';
 import { colorsLight, fontFamily } from '../../theme/theme';
-import { formatHumanDate } from '../inputs/DateInput';
+import { formatEventWhen } from '../../utils/date';
 
 type CurrentEventsProps = {
   currentEvents: string[];
@@ -16,7 +16,7 @@ type CurrentEventsProps = {
 };
 
 type UpcomingEventsProps = {
-  upcomingEvents: Array<{ title: string; date?: string; notes?: string }>;
+  upcomingEvents: Array<{ title: string; date?: string; startsAt?: string; notes?: string }>;
   onAddUpcoming: (event: UpcomingEventForm) => void;
   onEditUpcoming?: (index: number, event: UpcomingEventForm) => void;
   onDeleteUpcoming?: (index: number) => void;
@@ -74,7 +74,7 @@ export default function EventsSection({
       <SectionLabel>Upcoming</SectionLabel>
       <View style={styles.stack}>
         {upcomingEvents.map((ue, idx) => {
-          const subtitle = [formatHumanDate(ue.date ?? ''), ue.notes].filter(Boolean).join(' · ');
+          const subtitle = [formatEventWhen(ue), ue.notes].filter(Boolean).join(' · ');
           return (
             <ItemCard
               key={`${ue.title}-${idx}`}
@@ -85,7 +85,7 @@ export default function EventsSection({
               onPress={() => {
                 if (!onEditUpcoming) return;
                 setEditUpcomingIdx(idx);
-                setUpcomingInitial({ title: ue.title, date: ue.date, notes: ue.notes });
+                setUpcomingInitial({ title: ue.title, date: ue.date, startsAt: ue.startsAt, notes: ue.notes });
                 setUpcomingVisible(true);
               }}
             />

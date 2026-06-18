@@ -4,11 +4,11 @@ export default `#graphql
     orgId: ID!
     firstName: String!
     lastName: String!
-    birthDate: Date
+    birthDate: CalendarDate
     contactIds: [String!]
     relationship: String
     howWeMet: String
-    anniversaryDate: Date
+    anniversaryDate: CalendarDate
 
     city: String
     employer: String
@@ -48,13 +48,15 @@ export default `#graphql
 
   type UpcomingEvent {
     title: String
-    date: Date
+    date: CalendarDate
+    startsAt: Date
     notes: String
   }
 
   input UpcomingEventInput {
     title: String
-    date: Date
+    date: CalendarDate
+    startsAt: Date
     notes: String
   }
 
@@ -66,7 +68,7 @@ export default `#graphql
   input PersonInput {
     firstName: String!
     lastName: String!
-    birthDate: Date
+    birthDate: CalendarDate
     relationship: String
     city: String
     employer: String

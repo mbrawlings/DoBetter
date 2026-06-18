@@ -3,7 +3,7 @@ export default `#graphql
     id: ID!
     orgId: ID!
     personId: ID!
-    date: Date
+    date: CalendarDate
     channel: String
     location: String
     summary: String!
@@ -28,7 +28,7 @@ export default `#graphql
 
   input InteractionInput {
     personId: ID!
-    date: Date
+    date: CalendarDate
     channel: String
     location: String
     summary: String!
@@ -37,7 +37,7 @@ export default `#graphql
   }
 
   input InteractionUpdateInput {
-    date: Date
+    date: CalendarDate
     channel: String
     location: String
     summary: String

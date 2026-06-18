@@ -1,6 +1,7 @@
 export type UpcomingEvent = {
   title: string;
   date?: string;
+  startsAt?: string;
   notes?: string;
 };
 
@@ -39,5 +40,6 @@ export type InteractionFormData = {
 export type UpcomingEventFormData = {
   title: string;
   date?: string;
+  startsAt?: string;
   notes?: string;
 };

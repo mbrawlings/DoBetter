@@ -4,7 +4,7 @@ import { ActivityIndicator, Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { useMutation, useQuery } from '@apollo/client';
 import ChipInput from '../components/inputs/ChipInput';
-import DateInput from '../components/inputs/DateInput';
+import DateInput, { toYmd } from '../components/inputs/DateInput';
 import SelectInput from '../components/inputs/SelectInput';
 import EventsSection from '../components/sections/EventsSection';
 import GiftIdeasSection from '../components/sections/GiftIdeasSection';
@@ -20,7 +20,6 @@ import {
   SectionLabel,
 } from '../components/ui';
 import { RELATIONSHIP_OPTIONS } from '../constants/options';
-import { formatDateYmd } from '../utils/date';
 import { colorsLight, fontFamily } from '../theme/theme';
 import type { GiftIdeaForm } from '../components/modals/GiftIdeaModal';
 import type { InteractionForm } from '../components/modals/InteractionModal';
@@ -106,7 +105,7 @@ export default function PersonFormScreen({ navigation }: any) {
 
   const [localCurrentEvents, setLocalCurrentEvents] = React.useState<string[]>([]);
   const [localUpcomingEvents, setLocalUpcomingEvents] = React.useState<
-    Array<{ title: string; date?: string; notes?: string }>
+    Array<{ title: string; date?: string; startsAt?: string; notes?: string }>
   >([]);
   const [localGiftIdeas, setLocalGiftIdeas] = React.useState<GiftIdea[]>([]);
   const [localInteractions, setLocalInteractions] = React.useState<Interaction[]>([]);
@@ -119,7 +118,7 @@ export default function PersonFormScreen({ navigation }: any) {
       setEmployer(person.employer ?? '');
       setWorkRole(person.workRole ?? '');
       setRelationship(person.relationship ?? '');
-      setBirthDate(person.birthDate ? formatDateYmd(new Date(person.birthDate)) : '');
+      setBirthDate(person.birthDate ? toYmd(person.birthDate) : '');
       setInterests(Array.isArray(person.interests) ? person.interests : []);
     }
   }, [person]);
@@ -362,7 +361,7 @@ export default function PersonFormScreen({ navigation }: any) {
           onAddUpcoming={
             isEdit
               ? async (form) => {
-                  const payload: any = { title: form.title, date: form.date || undefined, notes: form.notes || undefined };
+                  const payload: any = { title: form.title, date: form.date || undefined, startsAt: form.startsAt || undefined, notes: form.notes || undefined };
                   const next = [...(person?.upcomingEvents ?? []), payload];
                   await updatePerson({ variables: { id: personId, input: { ...currentPersonInput(), upcomingEvents: next } } });
                   refetch();
@@ -370,21 +369,21 @@ export default function PersonFormScreen({ navigation }: any) {
               : (form) =>
                   setLocalUpcomingEvents((arr) => [
                     ...arr,
-                    { title: form.title, date: form.date || undefined, notes: form.notes || undefined },
+                    { title: form.title, date: form.date || undefined, startsAt: form.startsAt || undefined, notes: form.notes || undefined },
                   ])
           }
           onEditUpcoming={
             isEdit
               ? async (index, form) => {
                   const base: any[] = [...(person?.upcomingEvents ?? [])];
-                  base[index] = { title: form.title, date: form.date || undefined, notes: form.notes || undefined };
+                  base[index] = { title: form.title, date: form.date || undefined, startsAt: form.startsAt || undefined, notes: form.notes || undefined };
                   await updatePerson({ variables: { id: personId, input: { ...currentPersonInput(), upcomingEvents: base } } });
                   refetch();
                 }
               : (index, form) =>
                   setLocalUpcomingEvents((arr) => {
                     const next = [...arr];
-                    next[index] = { title: form.title, date: form.date || undefined, notes: form.notes || undefined };
+                    next[index] = { title: form.title, date: form.date || undefined, startsAt: form.startsAt || undefined, notes: form.notes || undefined };
                     return next;
                   })
           }

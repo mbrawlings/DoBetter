@@ -7,11 +7,11 @@ const persons = new Schema(
     orgId: { type: Types.ObjectId, index: true, required: true }, // or userId for solo use
     firstName: { type: String, index: true, required: true },
     lastName: { type: String, index: true, required: true },
-    birthDate: Date,
+    birthDate: String, // calendar date "YYYY-MM-DD"
     contactIds: [String], // OS contact record ids
     relationship: { type: String, enum: ['spouse','sibling','parent','child','friend','colleague','other'] },
     howWeMet: String,
-    anniversaryDate: Date,
+    anniversaryDate: String, // calendar date "YYYY-MM-DD"
 
     city: String,
     employer: String,
@@ -32,7 +32,7 @@ const persons = new Schema(
     wishlistLinks: [String],
 
     currentEvents: [String],
-    upcomingEvents: [{ title: String, date: Date, notes: String }],
+    upcomingEvents: [{ title: String, date: String, startsAt: Date, notes: String }],
 
     pinnedNotes: [String],
     lastContactedAt: Date,

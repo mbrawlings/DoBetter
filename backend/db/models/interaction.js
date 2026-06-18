@@ -6,7 +6,7 @@ const interactions = new Schema(
   {
     orgId: { type: Types.ObjectId, index: true, required: true },
     personId: { type: Types.ObjectId, ref: 'Person', index: true, required: true },
-    date: { type: Date, index: true, default: () => new Date() },
+    date: { type: String, index: true, default: () => new Date().toISOString().slice(0, 10) },
     channel: { type: String, enum: ['irl','call','text','video','other'], default: 'irl' },
     location: String,
     summary: { type: String, required: true },

@@ -72,7 +72,7 @@ export const GET_PERSON_QUERY = gql`
       workRole
       interests
       currentEvents
-      upcomingEvents { title date notes }
+      upcomingEvents { title date startsAt notes }
     }
   }
 `;
