@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { View } from 'react-native';
-import { Menu } from 'react-native-paper';
+import { Keyboard, View } from 'react-native';
 import FieldRow from '../ui/FieldRow';
+import SelectSheet from '../modals/SelectSheet';
 
 type Props = {
   label: string;
@@ -17,31 +17,28 @@ export default function SelectInput({ label, value, options, onChange, required,
 
   return (
     <View>
-      <Menu
+      <FieldRow
+        label={label}
+        value={value}
+        placeholder={placeholder ?? 'Select…'}
+        required={required}
+        variant="select"
+        onPress={() => {
+          Keyboard.dismiss();
+          setVisible(true);
+        }}
+      />
+      <SelectSheet
         visible={visible}
+        title={label}
+        options={options}
+        value={value}
+        onSelect={(opt) => {
+          onChange(opt);
+          setVisible(false);
+        }}
         onDismiss={() => setVisible(false)}
-        anchor={
-          <FieldRow
-            label={label}
-            value={value}
-            placeholder={placeholder ?? 'Select…'}
-            required={required}
-            variant="select"
-            onPress={() => setVisible(true)}
-          />
-        }
-      >
-        {options.map((opt) => (
-          <Menu.Item
-            key={opt}
-            onPress={() => {
-              onChange(opt);
-              setVisible(false);
-            }}
-            title={opt}
-          />
-        ))}
-      </Menu>
+      />
     </View>
   );
 }

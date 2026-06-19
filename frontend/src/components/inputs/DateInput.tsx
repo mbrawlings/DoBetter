@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { Keyboard, Platform, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Button, Modal, Portal, Text } from 'react-native-paper';
 import FieldRow from '../ui/FieldRow';
-import { colorsLight, fontFamily } from '../../theme/theme';
+import PickerSheet from '../modals/PickerSheet';
 import { formatDateYmd } from '../../utils/date';
 
 type Props = {
@@ -39,6 +38,7 @@ export default function DateInput({ label, value, onChange, required, placeholde
   }, [value]);
 
   function openPicker() {
+    Keyboard.dismiss();
     if (Platform.OS === 'ios') {
       setTempDate(dateObj ?? new Date());
       setIosModalVisible(true);
@@ -118,46 +118,25 @@ export default function DateInput({ label, value, onChange, required, placeholde
         />
       )}
       {Platform.OS === 'ios' && (
-        <Portal>
-          <Modal
-            visible={iosModalVisible}
-            onDismiss={() => setIosModalVisible(false)}
-            contentContainerStyle={{
-              backgroundColor: colorsLight.surface,
-              marginHorizontal: 16,
-              borderRadius: 16,
-              padding: 16,
+        <PickerSheet
+          visible={iosModalVisible}
+          title="Select date"
+          onDismiss={() => setIosModalVisible(false)}
+          onConfirm={() => {
+            setDateObj(tempDate);
+            onChange(formatDateYmd(tempDate), tempDate);
+            setIosModalVisible(false);
+          }}
+        >
+          <DateTimePicker
+            value={tempDate}
+            mode="date"
+            display="spinner"
+            onChange={(_event: unknown, date?: Date) => {
+              if (date) setTempDate(date);
             }}
-          >
-            <Text style={{ fontFamily: fontFamily.semibold, fontSize: 16, marginBottom: 8, color: colorsLight.text }}>
-              Select date
-            </Text>
-            <DateTimePicker
-              value={tempDate}
-              mode="date"
-              display="spinner"
-              onChange={(_event: unknown, date?: Date) => {
-                if (date) setTempDate(date);
-              }}
-              style={{ marginBottom: 12 }}
-            />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
-              <Button onPress={() => setIosModalVisible(false)}>Cancel</Button>
-              <Button
-                mode="contained"
-                buttonColor={colorsLight.primary}
-                textColor={colorsLight.primaryFg}
-                onPress={() => {
-                  setDateObj(tempDate);
-                  onChange(formatDateYmd(tempDate), tempDate);
-                  setIosModalVisible(false);
-                }}
-              >
-                Done
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+          />
+        </PickerSheet>
       )}
     </>
   );
