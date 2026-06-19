@@ -10,16 +10,16 @@ import { formatEventWhen } from '../../utils/date';
 
 type CurrentEventsProps = {
   currentEvents: string[];
-  onAddCurrent: (text: string) => void;
-  onEditCurrent?: (index: number, text: string) => void;
-  onDeleteCurrent?: (index: number) => void;
+  onAddCurrent: (text: string) => void | Promise<void>;
+  onEditCurrent?: (index: number, text: string) => void | Promise<void>;
+  onDeleteCurrent?: (index: number) => void | Promise<void>;
 };
 
 type UpcomingEventsProps = {
   upcomingEvents: Array<{ title: string; date?: string; startsAt?: string; notes?: string }>;
-  onAddUpcoming: (event: UpcomingEventForm) => void;
-  onEditUpcoming?: (index: number, event: UpcomingEventForm) => void;
-  onDeleteUpcoming?: (index: number) => void;
+  onAddUpcoming: (event: UpcomingEventForm) => void | Promise<void>;
+  onEditUpcoming?: (index: number, event: UpcomingEventForm) => void | Promise<void>;
+  onDeleteUpcoming?: (index: number) => void | Promise<void>;
 };
 
 type Props = CurrentEventsProps & UpcomingEventsProps;
@@ -107,11 +107,11 @@ export default function EventsSection({
         label="Event"
         initialValue={currentInitial}
         onDismiss={() => setCurrentVisible(false)}
-        onSave={(value) => {
+        onSave={async (value) => {
           if (editCurrentIdx !== null && onEditCurrent) {
-            onEditCurrent(editCurrentIdx, value);
+            await onEditCurrent(editCurrentIdx, value);
           } else {
-            onAddCurrent(value);
+            await onAddCurrent(value);
           }
           setCurrentVisible(false);
         }}
@@ -122,11 +122,11 @@ export default function EventsSection({
         titleText={editUpcomingIdx !== null ? 'Edit upcoming event' : 'New upcoming event'}
         initial={upcomingInitial}
         onDismiss={() => setUpcomingVisible(false)}
-        onSave={(form) => {
+        onSave={async (form) => {
           if (editUpcomingIdx !== null && onEditUpcoming) {
-            onEditUpcoming(editUpcomingIdx, form);
+            await onEditUpcoming(editUpcomingIdx, form);
           } else {
-            onAddUpcoming(form);
+            await onAddUpcoming(form);
           }
           setUpcomingVisible(false);
         }}

@@ -16,7 +16,7 @@ type Props = {
   titleText: string;
   initial?: UpcomingEventForm;
   onDismiss: () => void;
-  onSave: (form: UpcomingEventForm) => void;
+  onSave: (form: UpcomingEventForm) => void | Promise<void>;
 };
 
 export default function UpcomingEventModal({ visible, titleText, initial, onDismiss, onSave }: Props) {
@@ -43,11 +43,10 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
 
   function handleSave() {
     if (allDay) {
-      onSave({ title, date: date || undefined, startsAt: undefined, notes });
-    } else {
-      const startsAt = date && time ? combineDateAndTime(date, time) : undefined;
-      onSave({ title, date: date || undefined, startsAt, notes });
+      return onSave({ title, date: date || undefined, startsAt: undefined, notes });
     }
+    const startsAt = date && time ? combineDateAndTime(date, time) : undefined;
+    return onSave({ title, date: date || undefined, startsAt, notes });
   }
 
   function toggleAllDay(next: boolean) {

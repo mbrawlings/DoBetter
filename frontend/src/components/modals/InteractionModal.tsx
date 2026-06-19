@@ -16,7 +16,7 @@ type Props = {
   titleText: string;
   initial?: InteractionForm;
   onDismiss: () => void;
-  onSave: (form: InteractionForm) => void;
+  onSave: (form: InteractionForm) => void | Promise<void>;
 };
 
 export default function InteractionModal({ visible, titleText, initial, onDismiss, onSave }: Props) {

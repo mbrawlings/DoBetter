@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colorsLight, fontFamily, shadows } from '../../theme/theme';
 
@@ -10,6 +10,7 @@ type Props = {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  loading?: boolean;
   onConfirm: () => void;
   onDismiss: () => void;
 };
@@ -21,6 +22,7 @@ export default function ConfirmSheet({
   confirmLabel = 'Sign out',
   cancelLabel = 'Cancel',
   destructive = false,
+  loading = false,
   onConfirm,
   onDismiss,
 }: Props) {
@@ -39,11 +41,16 @@ export default function ConfirmSheet({
     }
   }, [visible, opacity, translate]);
 
+  const handleDismiss = () => {
+    if (loading) return;
+    onDismiss();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleDismiss} statusBarTranslucent>
       <View style={styles.root}>
         <Animated.View style={[styles.backdrop, { opacity }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
         </Animated.View>
         <Animated.View style={[styles.sheet, { transform: [{ translateY: translate }] }]}>
           <View style={styles.handle} />
@@ -51,17 +58,27 @@ export default function ConfirmSheet({
           {message ? <Text style={styles.message}>{message}</Text> : null}
           <Pressable
             onPress={onConfirm}
+            disabled={loading}
             style={({ pressed }: { pressed: boolean }) => [
               styles.confirm,
               destructive ? styles.confirmDestructive : styles.confirmDefault,
-              pressed ? styles.pressed : null,
+              pressed && !loading ? styles.pressed : null,
             ]}
           >
-            <Text style={styles.confirmLabel}>{confirmLabel}</Text>
+            {loading ? (
+              <ActivityIndicator color={colorsLight.primaryFg} />
+            ) : (
+              <Text style={styles.confirmLabel}>{confirmLabel}</Text>
+            )}
           </Pressable>
           <Pressable
-            onPress={onDismiss}
-            style={({ pressed }: { pressed: boolean }) => [styles.cancel, pressed ? styles.pressed : null]}
+            onPress={handleDismiss}
+            disabled={loading}
+            style={({ pressed }: { pressed: boolean }) => [
+              styles.cancel,
+              pressed && !loading ? styles.pressed : null,
+              loading ? styles.cancelDisabled : null,
+            ]}
           >
             <Text style={styles.cancelLabel}>{cancelLabel}</Text>
           </Pressable>
@@ -144,6 +161,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 50,
     marginTop: 8,
+  },
+  cancelDisabled: {
+    opacity: 0.5,
   },
   cancelLabel: {
     color: colorsLight.text,

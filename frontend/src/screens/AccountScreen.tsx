@@ -14,14 +14,21 @@ export default function AccountScreen({ navigation }: any) {
   const { logout } = useAuth();
   const { data } = useQuery(ME_QUERY);
   const [confirmVisible, setConfirmVisible] = React.useState(false);
+  const [signingOut, setSigningOut] = React.useState(false);
 
   const me: MeUser | undefined = data?.me;
   const displayName = me?.name?.trim() || me?.email || '';
   const [firstName = '', lastName = ''] = displayName.split(' ');
 
-  const onConfirmSignOut = () => {
-    setConfirmVisible(false);
-    void logout();
+  const onConfirmSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      setSigningOut(false);
+      setConfirmVisible(false);
+    }
   };
 
   return (
@@ -51,6 +58,7 @@ export default function AccountScreen({ navigation }: any) {
         message="You will need to log in again to access your data."
         confirmLabel="Sign out"
         destructive
+        loading={signingOut}
         onConfirm={onConfirmSignOut}
         onDismiss={() => setConfirmVisible(false)}
       />

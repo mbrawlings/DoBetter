@@ -82,8 +82,8 @@ export default function PersonFormScreen({ navigation }: any) {
     fetchPolicy: 'cache-and-network',
   });
 
-  const [createPerson, { loading: creating, error: createError }] = useMutation(CREATE_PERSON_MUTATION);
-  const [updatePerson, { loading: updating }] = useMutation(UPDATE_PERSON_MUTATION);
+  const [createPerson, { error: createError }] = useMutation(CREATE_PERSON_MUTATION);
+  const [updatePerson] = useMutation(UPDATE_PERSON_MUTATION);
   const [createGiftIdea] = useMutation(CREATE_GIFT_IDEA_MUTATION);
   const [updateGiftIdea] = useMutation(UPDATE_GIFT_IDEA_MUTATION);
   const [deleteGiftIdea] = useMutation(DELETE_GIFT_IDEA_MUTATION);
@@ -92,7 +92,7 @@ export default function PersonFormScreen({ navigation }: any) {
   const [deleteInteraction] = useMutation(DELETE_INTERACTION_MUTATION);
 
   const person = data?.person;
-  const saving = creating || updating;
+  const [submitting, setSubmitting] = React.useState(false);
 
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
@@ -139,7 +139,7 @@ export default function PersonFormScreen({ navigation }: any) {
   }
 
   async function onSave() {
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
     const input = buildPersonInput({
       firstName,
       lastName,
@@ -151,54 +151,59 @@ export default function PersonFormScreen({ navigation }: any) {
       interests,
     });
 
-    if (isEdit) {
-      await updatePerson({ variables: { id: personId, input } });
-    } else {
-      if (localCurrentEvents.length) input.currentEvents = localCurrentEvents;
-      if (localUpcomingEvents.length) input.upcomingEvents = localUpcomingEvents;
+    setSubmitting(true);
+    try {
+      if (isEdit) {
+        await updatePerson({ variables: { id: personId, input } });
+      } else {
+        if (localCurrentEvents.length) input.currentEvents = localCurrentEvents;
+        if (localUpcomingEvents.length) input.upcomingEvents = localUpcomingEvents;
 
-      const res = await createPerson({ variables: { input } });
-      const newId = res?.data?.createPerson?.id as string | undefined;
+        const res = await createPerson({ variables: { input } });
+        const newId = res?.data?.createPerson?.id as string | undefined;
 
-      if (newId) {
-        if (localGiftIdeas.length) {
-          await Promise.all(
-            localGiftIdeas.map((gi) =>
-              createGiftIdea({
-                variables: {
-                  input: {
-                    personId: newId,
-                    title: gi.title,
-                    notes: gi.notes,
-                    occasion: gi.occasion || undefined,
-                    status: gi.status || undefined,
-                    priority: gi.priority || undefined,
+        if (newId) {
+          if (localGiftIdeas.length) {
+            await Promise.all(
+              localGiftIdeas.map((gi) =>
+                createGiftIdea({
+                  variables: {
+                    input: {
+                      personId: newId,
+                      title: gi.title,
+                      notes: gi.notes,
+                      occasion: gi.occasion || undefined,
+                      status: gi.status || undefined,
+                      priority: gi.priority || undefined,
+                    },
                   },
-                },
-              }),
-            ),
-          );
-        }
-        if (localInteractions.length) {
-          await Promise.all(
-            localInteractions.map((itx) =>
-              createInteraction({
-                variables: {
-                  input: {
-                    personId: newId,
-                    summary: itx.summary,
-                    date: itx.date,
-                    channel: itx.channel,
-                    location: itx.location,
+                }),
+              ),
+            );
+          }
+          if (localInteractions.length) {
+            await Promise.all(
+              localInteractions.map((itx) =>
+                createInteraction({
+                  variables: {
+                    input: {
+                      personId: newId,
+                      summary: itx.summary,
+                      date: itx.date,
+                      channel: itx.channel,
+                      location: itx.location,
+                    },
                   },
-                },
-              }),
-            ),
-          );
+                }),
+              ),
+            );
+          }
         }
       }
+      navigation.goBack();
+    } finally {
+      setSubmitting(false);
     }
-    navigation.goBack();
   }
 
   function onDeletePerson() {
@@ -271,7 +276,8 @@ export default function PersonFormScreen({ navigation }: any) {
           <NavLink
             label="Save"
             onPress={onSave}
-            disabled={!canSubmit || saving}
+            disabled={!canSubmit}
+            loading={submitting}
             bold
           />
         }
@@ -541,7 +547,7 @@ export default function PersonFormScreen({ navigation }: any) {
                 full
                 label="Save changes"
                 onPress={onSave}
-                loading={saving}
+                loading={submitting}
                 disabled={!canSubmit}
               />
               <Pressable onPress={onDeletePerson} hitSlop={6} style={styles.deleteWrap}>

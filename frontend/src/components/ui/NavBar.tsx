@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { colorsLight, fontFamily } from '../../theme/theme';
 
@@ -52,9 +52,17 @@ type NavLinkProps = {
   onPress?: () => void;
   disabled?: boolean;
   bold?: boolean;
+  loading?: boolean;
 };
 
-export function NavLink({ label, onPress, disabled, bold }: NavLinkProps) {
+export function NavLink({ label, onPress, disabled, bold, loading }: NavLinkProps) {
+  if (loading) {
+    return (
+      <View style={styles.navLinkLoading}>
+        <ActivityIndicator size="small" color={colorsLight.primary} />
+      </View>
+    );
+  }
   return (
     <Pressable hitSlop={8} onPress={onPress} disabled={disabled}>
       <Text
@@ -155,6 +163,11 @@ const styles = StyleSheet.create({
   navLinkBold: {
     fontFamily: fontFamily.semibold,
     fontWeight: '600',
+  },
+  navLinkLoading: {
+    minWidth: 32,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   iconAction: {
     width: 34,

@@ -11,9 +11,9 @@ export type { InteractionForm };
 
 type Props = {
   items: Interaction[];
-  onAdd: (form: InteractionForm) => void;
-  onEdit?: (index: number, form: InteractionForm) => void;
-  onDelete?: (index: number) => void;
+  onAdd: (form: InteractionForm) => void | Promise<void>;
+  onEdit?: (index: number, form: InteractionForm) => void | Promise<void>;
+  onDelete?: (index: number) => void | Promise<void>;
 };
 
 const EMPTY_FORM: InteractionForm = { summary: '', date: '', channel: '', location: '' };
@@ -86,11 +86,11 @@ export default function InteractionsSection({ items, onAdd, onEdit }: Props) {
         titleText={editIdx !== null ? 'Edit moment' : 'New moment'}
         initial={initial}
         onDismiss={() => setVisible(false)}
-        onSave={(form) => {
+        onSave={async (form) => {
           if (editIdx !== null && onEdit) {
-            onEdit(editIdx, form);
+            await onEdit(editIdx, form);
           } else {
-            onAdd(form);
+            await onAdd(form);
           }
           setVisible(false);
         }}

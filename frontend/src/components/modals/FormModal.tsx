@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { colorsLight, fontFamily, shadows } from '../../theme/theme';
 
@@ -7,7 +7,7 @@ type Props = {
   visible: boolean;
   title: string;
   onDismiss: () => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   saveDisabled?: boolean;
   saveLabel?: string;
   cancelLabel?: string;
@@ -26,6 +26,7 @@ export default function FormModal({
 }: Props) {
   const opacity = React.useRef(new Animated.Value(0)).current;
   const translate = React.useRef(new Animated.Value(40)).current;
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (visible) {
@@ -39,24 +40,49 @@ export default function FormModal({
     }
   }, [visible, opacity, translate]);
 
+  const handleSave = React.useCallback(async () => {
+    if (saving) return;
+    try {
+      setSaving(true);
+      await onSave();
+    } catch {
+      // Keep the modal open so the user can retry; failures are surfaced by the caller.
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, onSave]);
+
+  const handleDismiss = React.useCallback(() => {
+    if (saving) return;
+    onDismiss();
+  }, [saving, onDismiss]);
+
+  const saveDimmed = saveDisabled || saving;
+
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleDismiss} statusBarTranslucent>
       <View style={styles.root}>
         <Animated.View style={[styles.backdrop, { opacity }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
         </Animated.View>
         <Animated.View style={[styles.sheet, { transform: [{ translateY: translate }] }]}>
           <View style={styles.handle} />
           <View style={styles.headerRow}>
-            <Pressable hitSlop={8} onPress={onDismiss}>
-              <Text style={styles.cancel}>{cancelLabel}</Text>
+            <Pressable hitSlop={8} onPress={handleDismiss} disabled={saving}>
+              <Text style={[styles.cancel, saving ? styles.saveDisabled : null]}>{cancelLabel}</Text>
             </Pressable>
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <Pressable hitSlop={8} onPress={onSave} disabled={saveDisabled}>
-              <Text style={[styles.save, saveDisabled ? styles.saveDisabled : null]}>{saveLabel}</Text>
-            </Pressable>
+            {saving ? (
+              <View style={styles.saveSlot}>
+                <ActivityIndicator size="small" color={colorsLight.primary} />
+              </View>
+            ) : (
+              <Pressable hitSlop={8} onPress={handleSave} disabled={saveDimmed}>
+                <Text style={[styles.save, saveDimmed ? styles.saveDisabled : null]}>{saveLabel}</Text>
+              </Pressable>
+            )}
           </View>
           <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
             {children}
@@ -126,6 +152,10 @@ const styles = StyleSheet.create({
     minWidth: 60,
     textAlign: 'right',
     includeFontPadding: false,
+  },
+  saveSlot: {
+    minWidth: 60,
+    alignItems: 'flex-end',
   },
   saveDisabled: {
     color: colorsLight.textFaint,

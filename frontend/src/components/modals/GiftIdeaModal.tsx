@@ -21,7 +21,7 @@ type Props = {
   titleText: string;
   initial?: GiftIdeaForm;
   onDismiss: () => void;
-  onSave: (form: GiftIdeaForm) => void;
+  onSave: (form: GiftIdeaForm) => void | Promise<void>;
 };
 
 export default function GiftIdeaModal({ visible, titleText, initial, onDismiss, onSave }: Props) {

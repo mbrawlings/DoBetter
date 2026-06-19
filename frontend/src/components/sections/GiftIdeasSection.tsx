@@ -11,9 +11,9 @@ export type { GiftIdeaForm };
 
 type Props = {
   items: GiftIdea[];
-  onAdd: (form: GiftIdeaForm) => void;
-  onEdit?: (index: number, form: GiftIdeaForm) => void;
-  onDelete?: (index: number) => void;
+  onAdd: (form: GiftIdeaForm) => void | Promise<void>;
+  onEdit?: (index: number, form: GiftIdeaForm) => void | Promise<void>;
+  onDelete?: (index: number) => void | Promise<void>;
 };
 
 const EMPTY_FORM: GiftIdeaForm = { title: '', notes: '', occasion: '', status: '', priority: '' };
@@ -80,11 +80,11 @@ export default function GiftIdeasSection({ items, onAdd, onEdit, onDelete }: Pro
         titleText={editIdx !== null ? 'Edit gift idea' : 'New gift idea'}
         initial={initial}
         onDismiss={() => setVisible(false)}
-        onSave={(form) => {
+        onSave={async (form) => {
           if (editIdx !== null && onEdit) {
-            onEdit(editIdx, form);
+            await onEdit(editIdx, form);
           } else {
-            onAdd(form);
+            await onAdd(form);
           }
           setVisible(false);
         }}

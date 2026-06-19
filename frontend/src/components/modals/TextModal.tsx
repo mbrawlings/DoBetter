@@ -9,7 +9,7 @@ type Props = {
   label: string;
   initialValue?: string;
   onDismiss: () => void;
-  onSave: (value: string) => void;
+  onSave: (value: string) => void | Promise<void>;
 };
 
 export default function TextModal({ visible, title, label, initialValue, onDismiss, onSave }: Props) {
