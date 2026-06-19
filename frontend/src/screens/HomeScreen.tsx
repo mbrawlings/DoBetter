@@ -20,7 +20,7 @@ import {
   PrimaryButton,
   SectionLabel,
 } from '../components/ui';
-import SortSheet, { SortBy } from '../components/modals/SortSheet';
+import SortSheet, { PEOPLE_SORT_OPTIONS, SortBy } from '../components/modals/SortSheet';
 
 type Person = {
   id: string;
@@ -106,7 +106,7 @@ export default function HomeScreen() {
     (navigation as any).navigate('Person' as never);
   }
   function gotoPerson(id: string) {
-    (navigation as any).navigate('Person' as never, { id } as never);
+    (navigation as any).navigate('PersonHub' as never, { id } as never);
   }
   function gotoAccount() {
     (navigation as any).navigate('Account' as never);
@@ -269,6 +269,7 @@ export default function HomeScreen() {
       <SortSheet
         visible={sortSheetVisible}
         value={sortBy}
+        options={PEOPLE_SORT_OPTIONS}
         onSelect={(value) => {
           setSortBy(value);
           setSortSheetVisible(false);

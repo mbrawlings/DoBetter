@@ -17,9 +17,10 @@ type Props = {
   initial?: InteractionForm;
   onDismiss: () => void;
   onSave: (form: InteractionForm) => void | Promise<void>;
+  onDelete?: () => void;
 };
 
-export default function InteractionModal({ visible, titleText, initial, onDismiss, onSave }: Props) {
+export default function InteractionModal({ visible, titleText, initial, onDismiss, onSave, onDelete }: Props) {
   const [summary, setSummary] = React.useState(initial?.summary ?? '');
   const [date, setDate] = React.useState(initial?.date ?? '');
   const [channel, setChannel] = React.useState(initial?.channel ?? '');
@@ -39,6 +40,8 @@ export default function InteractionModal({ visible, titleText, initial, onDismis
       onDismiss={onDismiss}
       onSave={() => onSave({ summary, date, channel, location })}
       saveDisabled={!summary.trim()}
+      onDelete={onDelete}
+      deleteLabel="Delete moment"
     >
       <FieldGroup>
         <FieldRow

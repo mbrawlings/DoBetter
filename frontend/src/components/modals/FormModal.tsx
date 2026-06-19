@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
-import { colorsLight, fontFamily, shadows } from '../../theme/theme';
+import { Icon, Text } from 'react-native-paper';
+import { colorsLight, fontFamily, radius, shadows } from '../../theme/theme';
 
 type Props = {
   visible: boolean;
@@ -11,6 +11,8 @@ type Props = {
   saveDisabled?: boolean;
   saveLabel?: string;
   cancelLabel?: string;
+  onDelete?: () => void;
+  deleteLabel?: string;
   children: React.ReactNode;
 };
 
@@ -22,6 +24,8 @@ export default function FormModal({
   saveDisabled,
   saveLabel = 'Save',
   cancelLabel = 'Cancel',
+  onDelete,
+  deleteLabel = 'Delete',
   children,
 }: Props) {
   const opacity = React.useRef(new Animated.Value(0)).current;
@@ -86,6 +90,17 @@ export default function FormModal({
           </View>
           <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
             {children}
+            {onDelete ? (
+              <Pressable
+                onPress={onDelete}
+                disabled={saving}
+                hitSlop={4}
+                style={styles.deleteButton}
+              >
+                <Icon source="trash-can-outline" size={16} color={colorsLight.danger} />
+                <Text style={styles.deleteLabel}>{deleteLabel}</Text>
+              </Pressable>
+            ) : null}
           </ScrollView>
         </Animated.View>
       </View>
@@ -162,5 +177,24 @@ const styles = StyleSheet.create({
   },
   body: {
     paddingBottom: 16,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 13,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colorsLight.border,
+  },
+  deleteLabel: {
+    fontFamily: fontFamily.semibold,
+    fontWeight: '600',
+    fontSize: 15,
+    color: colorsLight.danger,
+    includeFontPadding: false,
   },
 });

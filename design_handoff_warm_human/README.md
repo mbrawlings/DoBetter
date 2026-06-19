@@ -1,5 +1,7 @@
 # Handoff: DoBetter — Warm & Human visual system
 
+> **⚠️ Person screen update (v2):** the per-person screen has been restructured from a single stacked-scroll form into a read-only **hub + drill-down** system. The tokens, components, and all other screens in this README still apply as-is, **but ignore the old "Person form" screen spec below** (the stacked layout with inline event/gift/moment sections) — it is superseded by **`PERSON_HUB.md`**. Read that for the person screen; read this for everything else. Interactive reference: **`hub-reference.html`**.
+
 ## Overview
 
 This package redesigns the DoBetter React Native app with a refined, consistent visual system called **"Warm & Human"** — a warmer, more humane evolution of the current iOS-style pattern. It defines tokens (color, type, spacing, radius), reusable components (buttons, inputs, chips, cards, avatars, section headers), and applies them across every screen the user encounters: Home (people list), Person form (create / edit / inline view), section modals (Gift Idea, Interaction, Event), and empty states.

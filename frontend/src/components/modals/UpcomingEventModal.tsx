@@ -17,9 +17,10 @@ type Props = {
   initial?: UpcomingEventForm;
   onDismiss: () => void;
   onSave: (form: UpcomingEventForm) => void | Promise<void>;
+  onDelete?: () => void;
 };
 
-export default function UpcomingEventModal({ visible, titleText, initial, onDismiss, onSave }: Props) {
+export default function UpcomingEventModal({ visible, titleText, initial, onDismiss, onSave, onDelete }: Props) {
   const [title, setTitle] = React.useState('');
   const [date, setDate] = React.useState('');
   const [time, setTime] = React.useState('');
@@ -61,6 +62,8 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
       onDismiss={onDismiss}
       onSave={handleSave}
       saveDisabled={!title.trim()}
+      onDelete={onDelete}
+      deleteLabel="Delete event"
     >
       <FieldGroup>
         <FieldRow

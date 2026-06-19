@@ -3,6 +3,8 @@ export { default as ChipGroup } from './ChipGroup';
 export { default as FieldGroup } from './FieldGroup';
 export { default as FieldRow } from './FieldRow';
 export { default as ItemCard } from './ItemCard';
+export { default as KeyFactChip } from './KeyFactChip';
 export { default as PrimaryButton } from './PrimaryButton';
 export { default as SectionLabel } from './SectionLabel';
+export { default as SummaryRow } from './SummaryRow';
 export { default as NavBar, BackButton, NavLink, NavIconAction } from './NavBar';

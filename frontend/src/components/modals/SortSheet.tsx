@@ -5,20 +5,31 @@ import { colorsLight, fontFamily, shadows } from '../../theme/theme';
 
 export type SortBy = 'recent' | 'az' | 'za';
 
-const OPTIONS: { value: SortBy; label: string }[] = [
+export type SortOption<T extends string = string> = { value: T; label: string };
+
+export const PEOPLE_SORT_OPTIONS: SortOption<SortBy>[] = [
   { value: 'recent', label: 'Recently updated' },
   { value: 'az', label: 'Name (A–Z)' },
   { value: 'za', label: 'Name (Z–A)' },
 ];
 
-type Props = {
+type Props<T extends string> = {
   visible: boolean;
-  value: SortBy;
-  onSelect: (value: SortBy) => void;
+  value: T;
+  options: SortOption<T>[];
+  title?: string;
+  onSelect: (value: T) => void;
   onDismiss: () => void;
 };
 
-export default function SortSheet({ visible, value, onSelect, onDismiss }: Props) {
+export default function SortSheet<T extends string>({
+  visible,
+  value,
+  options,
+  title = 'Sort by',
+  onSelect,
+  onDismiss,
+}: Props<T>) {
   const opacity = React.useRef(new Animated.Value(0)).current;
   const translate = React.useRef(new Animated.Value(40)).current;
 
@@ -42,9 +53,9 @@ export default function SortSheet({ visible, value, onSelect, onDismiss }: Props
         </Animated.View>
         <Animated.View style={[styles.sheet, { transform: [{ translateY: translate }] }]}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Sort by</Text>
+          <Text style={styles.title}>{title}</Text>
           <View style={styles.options}>
-            {OPTIONS.map((opt) => {
+            {options.map((opt) => {
               const selected = opt.value === value;
               return (
                 <Pressable

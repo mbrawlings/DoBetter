@@ -15,6 +15,8 @@ export const colorsLight = {
   focusedFieldBg: '#FFFBF5',
   giftIconBg: '#F2E9D9',
   giftIconFg: '#8E6A2A',
+  momentsIconBg: '#E5EBEE',
+  momentsIconFg: '#3F7B8E',
   backdrop: 'rgba(15,12,10,0.32)',
 } as const;
 
@@ -35,8 +37,18 @@ export const colorsDark = {
   focusedFieldBg: '#2D2723',
   giftIconBg: '#3A3328',
   giftIconFg: '#D9B66E',
+  momentsIconBg: '#22323A',
+  momentsIconFg: '#6FA0B5',
   backdrop: 'rgba(0,0,0,0.5)',
 } as const;
+
+// Gift status pill colors (light). Keyed by GIFT_STATUS_OPTIONS values.
+export const giftStatusColorsLight: Record<string, { bg: string; fg: string }> = {
+  idea: { bg: '#F4EFE7', fg: '#6F6860' },
+  shortlist: { bg: '#F8E5DC', fg: '#B85C3E' },
+  purchased: { bg: '#E7EEDB', fg: '#5C7A2E' },
+  gifted: { bg: '#E5EBEE', fg: '#3F7B8E' },
+};
 
 export const spacing = {
   xs: 4,

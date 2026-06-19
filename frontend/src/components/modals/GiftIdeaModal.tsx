@@ -22,9 +22,10 @@ type Props = {
   initial?: GiftIdeaForm;
   onDismiss: () => void;
   onSave: (form: GiftIdeaForm) => void | Promise<void>;
+  onDelete?: () => void;
 };
 
-export default function GiftIdeaModal({ visible, titleText, initial, onDismiss, onSave }: Props) {
+export default function GiftIdeaModal({ visible, titleText, initial, onDismiss, onSave, onDelete }: Props) {
   const [title, setTitle] = React.useState(initial?.title ?? '');
   const [notes, setNotes] = React.useState(initial?.notes ?? '');
   const [occasion, setOccasion] = React.useState(initial?.occasion ?? '');
@@ -46,6 +47,8 @@ export default function GiftIdeaModal({ visible, titleText, initial, onDismiss, 
       onDismiss={onDismiss}
       onSave={() => onSave({ title, notes, occasion, status, priority })}
       saveDisabled={!title.trim()}
+      onDelete={onDelete}
+      deleteLabel="Delete gift idea"
     >
       <FieldGroup>
         <FieldRow

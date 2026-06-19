@@ -10,9 +10,11 @@ type Props = {
   initialValue?: string;
   onDismiss: () => void;
   onSave: (value: string) => void | Promise<void>;
+  onDelete?: () => void;
+  deleteLabel?: string;
 };
 
-export default function TextModal({ visible, title, label, initialValue, onDismiss, onSave }: Props) {
+export default function TextModal({ visible, title, label, initialValue, onDismiss, onSave, onDelete, deleteLabel }: Props) {
   const [value, setValue] = React.useState(initialValue ?? '');
 
   React.useEffect(() => {
@@ -26,6 +28,8 @@ export default function TextModal({ visible, title, label, initialValue, onDismi
       onDismiss={onDismiss}
       onSave={() => onSave(value)}
       saveDisabled={!value.trim()}
+      onDelete={onDelete}
+      deleteLabel={deleteLabel ?? 'Delete'}
     >
       <FieldGroup>
         <FieldRow

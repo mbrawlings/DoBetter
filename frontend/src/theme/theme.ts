@@ -4,13 +4,14 @@ import {
   colorsDark,
   colorsLight,
   fontFamily,
+  giftStatusColorsLight,
   radius,
   shadows,
   spacing,
   typography,
 } from './tokens';
 
-export { spacing, radius, typography, shadows, fontFamily, avatarPalette, colorsLight, colorsDark };
+export { spacing, radius, typography, shadows, fontFamily, avatarPalette, colorsLight, colorsDark, giftStatusColorsLight };
 export type { ColorTokens } from './tokens';
 
 const fontConfig = {
