@@ -10,6 +10,8 @@ export default `#graphql
     howWeMet: String
     anniversaryDate: CalendarDate
 
+    background: String
+
     city: String
     employer: String
     workRole: String
@@ -70,6 +72,7 @@ export default `#graphql
     lastName: String!
     birthDate: CalendarDate
     relationship: String
+    background: String
     city: String
     employer: String
     workRole: String

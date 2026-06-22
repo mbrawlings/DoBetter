@@ -13,14 +13,22 @@ import { colorsLight, fontFamily } from '../../theme/theme';
 
 type Variant = 'text' | 'select' | 'date' | 'display';
 
+// Shared line height so the multiline input's min/max height maps cleanly to a
+// whole number of visible lines.
+const LINE_HEIGHT = 22;
+const MULTILINE_MAX_LINES = 8;
+
 type Props = {
   label: string;
   value?: string;
   placeholder?: string;
   required?: boolean;
   multiline?: boolean;
+  // For multiline inputs: minimum visible lines before it grows with content.
+  minLines?: number;
   variant?: Variant;
   onChangeText?: (text: string) => void;
+  inputRef?: React.Ref<TextInput>;
   onPress?: () => void;
   textInputProps?: Omit<TextInputProps, 'value' | 'onChangeText' | 'placeholder' | 'placeholderTextColor' | 'style'>;
   rightSlot?: React.ReactNode;
@@ -34,8 +42,10 @@ export default function FieldRow({
   placeholder,
   required,
   multiline,
+  minLines,
   variant = 'text',
   onChangeText,
+  inputRef,
   onPress,
   textInputProps,
   rightSlot,
@@ -44,6 +54,18 @@ export default function FieldRow({
 }: Props) {
   const [focused, setFocused] = React.useState(false);
   const isMultiline = multiline || Boolean(bodyBelow);
+
+  // Auto-grow: start at minLines tall, grow with content up to MULTILINE_MAX_LINES,
+  // then scroll internally. Driven by onContentSizeChange so it behaves the same on
+  // native and web (where multiline renders a non-growing <textarea>).
+  const autoGrow = Boolean(multiline && minLines);
+  const minHeight = (minLines ?? 0) * LINE_HEIGHT;
+  const maxHeight = Math.max(minLines ?? 0, MULTILINE_MAX_LINES) * LINE_HEIGHT;
+  const [contentHeight, setContentHeight] = React.useState(minHeight);
+  const inputHeight = Math.min(Math.max(contentHeight, minHeight), maxHeight);
+  const multilineSizing: TextStyle | null = autoGrow
+    ? { height: inputHeight, lineHeight: LINE_HEIGHT }
+    : null;
 
   const labelColor: string = focused || required ? colorsLight.primary : colorsLight.textMuted;
   const labelText = required ? `${label} *` : label;
@@ -66,6 +88,7 @@ export default function FieldRow({
       return (
         <TextInput
           {...textInputProps}
+          ref={inputRef}
           value={value ?? ''}
           onChangeText={onChangeText}
           onFocus={(e) => {
@@ -79,7 +102,12 @@ export default function FieldRow({
           placeholder={placeholder}
           placeholderTextColor={colorsLight.textFaint}
           multiline={multiline}
-          style={[styles.input, multiline ? styles.inputMulti : null]}
+          scrollEnabled={autoGrow ? contentHeight > maxHeight : undefined}
+          onContentSizeChange={(e) => {
+            if (autoGrow) setContentHeight(e.nativeEvent.contentSize.height);
+            textInputProps?.onContentSizeChange?.(e);
+          }}
+          style={[styles.input, multiline ? styles.inputMulti : null, multilineSizing]}
         />
       );
     }

@@ -67,6 +67,7 @@ export const GET_PERSON_QUERY = gql`
       lastName
       birthDate
       relationship
+      background
       city
       employer
       workRole

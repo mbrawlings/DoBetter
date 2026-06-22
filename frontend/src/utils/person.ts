@@ -7,6 +7,7 @@ export type PersonBioFields = {
   relationship: string;
   birthDate: string;
   interests: string[];
+  background: string;
 };
 
 export function buildPersonInput(fields: PersonBioFields) {
@@ -20,6 +21,8 @@ export function buildPersonInput(fields: PersonBioFields) {
   if (fields.relationship) input.relationship = fields.relationship;
   if (fields.birthDate) input.birthDate = fields.birthDate;
   input.interests = fields.interests;
+  // Sent unconditionally (even when empty) so clearing the field persists via $set.
+  input.background = fields.background.trim();
   return input;
 }
 
@@ -32,6 +35,7 @@ type PersonLike = {
   relationship?: string | null;
   birthDate?: string | null;
   interests?: string[] | null;
+  background?: string | null;
 };
 
 // Rebuild the PersonInput from a loaded person record. Used when editing the
@@ -47,5 +51,6 @@ export function personToInput(person: PersonLike) {
     relationship: person.relationship ?? '',
     birthDate: person.birthDate ? person.birthDate.split('T')[0] : '',
     interests: Array.isArray(person.interests) ? person.interests : [],
+    background: person.background ?? '',
   });
 }

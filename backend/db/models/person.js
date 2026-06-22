@@ -13,6 +13,8 @@ const persons = new Schema(
     howWeMet: String,
     anniversaryDate: String, // calendar date "YYYY-MM-DD"
 
+    background: { type: String, maxlength: 4000 }, // freeform context: hometown, siblings, history
+
     city: String,
     employer: String,
     workRole: String,

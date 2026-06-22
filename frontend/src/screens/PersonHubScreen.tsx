@@ -24,6 +24,9 @@ import type { GiftIdea, Interaction, UpcomingEvent } from '../types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const ABOUT_PREVIEW_LINES = 4;
+const ABOUT_LINE_HEIGHT = 22;
+
 function birthdayShort(value?: string | null): string {
   if (!value) return '';
   const [, mm, dd] = value.split('T')[0].split('-').map(Number);
@@ -69,6 +72,18 @@ export default function PersonHubScreen({ navigation }: any) {
   const moments: Interaction[] = (interData?.interactions ?? []) as any;
   const currentEvents: string[] = person?.currentEvents ?? [];
   const upcoming: UpcomingEvent[] = person?.upcomingEvents ?? [];
+
+  const background: string = person?.background ?? '';
+  const [aboutExpanded, setAboutExpanded] = React.useState(false);
+  // Measured once from the untruncated first render; reset when the text changes.
+  const [aboutFullHeight, setAboutFullHeight] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    setAboutExpanded(false);
+    setAboutFullHeight(null);
+  }, [background]);
+  const aboutOverflows =
+    aboutFullHeight !== null && aboutFullHeight > ABOUT_PREVIEW_LINES * ABOUT_LINE_HEIGHT + 4;
+  const truncateAbout = !aboutExpanded && aboutOverflows;
 
   function gotoEdit() {
     navigation.navigate('Person', { id: personId });
@@ -158,6 +173,36 @@ export default function PersonHubScreen({ navigation }: any) {
             {person.employer ? <KeyFactChip icon="briefcase-outline" label={person.employer} /> : null}
             {lastContact ? <KeyFactChip icon="message-outline" label={`Last contact ${lastContact}`} /> : null}
           </ScrollView>
+        ) : null}
+
+        {background ? (
+          <>
+            <SectionLabel>About</SectionLabel>
+            <Pressable
+              onPress={() => navigation.navigate('Person', { id: personId, focus: 'background' })}
+              style={styles.aboutCard}
+            >
+              <Text
+                style={styles.aboutText}
+                ellipsizeMode="tail"
+                numberOfLines={truncateAbout ? ABOUT_PREVIEW_LINES : undefined}
+                onLayout={(e) => {
+                  if (aboutFullHeight === null) setAboutFullHeight(e.nativeEvent.layout.height);
+                }}
+              >
+                {background}
+              </Text>
+            </Pressable>
+            {aboutOverflows ? (
+              <Pressable
+                onPress={() => setAboutExpanded((v) => !v)}
+                hitSlop={6}
+                style={styles.readMoreWrap}
+              >
+                <Text style={styles.readMore}>{aboutExpanded ? 'Show less' : 'Read more'}</Text>
+              </Pressable>
+            ) : null}
+          </>
         ) : null}
 
         {isEmpty ? (
@@ -303,6 +348,33 @@ const styles = StyleSheet.create({
   sectionStack: {
     marginHorizontal: 16,
     gap: 10,
+  },
+  aboutCard: {
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: radius.lg,
+    backgroundColor: colorsLight.raised,
+    borderWidth: 1,
+    borderColor: colorsLight.borderStrong,
+  },
+  aboutText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colorsLight.text,
+    includeFontPadding: false,
+  },
+  readMoreWrap: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  readMore: {
+    fontFamily: fontFamily.semibold,
+    fontWeight: '600',
+    fontSize: 14,
+    color: colorsLight.primary,
+    includeFontPadding: false,
   },
   hintCard: {
     marginHorizontal: 16,
