@@ -19,6 +19,7 @@ import {
   UPDATE_GIFT_IDEA_MUTATION,
 } from '../graphql/operations';
 import { GIFT_STATUS_OPTIONS } from '../constants/options';
+import { usePersistedState } from '../hooks/usePersistedState';
 import { colorsLight, fontFamily, giftStatusColorsLight, radius, shadows } from '../theme/theme';
 import type { GiftIdea } from '../types';
 
@@ -88,8 +89,8 @@ export default function GiftsScreen({ navigation }: any) {
 
   const items: GiftIdea[] = (data?.giftIdeas ?? []) as any;
 
-  const [filter, setFilter] = React.useState<GiftFilter>('All');
-  const [sort, setSort] = React.useState<GiftSort>('recent');
+  const [filter, setFilter] = usePersistedState<GiftFilter>('dobetter.pref.gifts.filter', 'All', FILTERS);
+  const [sort, setSort] = usePersistedState<GiftSort>('dobetter.pref.gifts.sort', 'recent', ['priority', 'status', 'recent']);
   const [sortVisible, setSortVisible] = React.useState(false);
 
   const counts = React.useMemo(() => {

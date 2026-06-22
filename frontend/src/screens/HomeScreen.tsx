@@ -21,6 +21,7 @@ import {
   SectionLabel,
 } from '../components/ui';
 import SortSheet, { PEOPLE_SORT_OPTIONS, SortBy } from '../components/modals/SortSheet';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 type Person = {
   id: string;
@@ -98,8 +99,8 @@ export default function HomeScreen() {
   );
 
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [filter, setFilter] = React.useState<Filter>('All');
-  const [sortBy, setSortBy] = React.useState<SortBy>('recent');
+  const [filter, setFilter] = usePersistedState<Filter>('dobetter.pref.home.filter', 'All', FILTERS);
+  const [sortBy, setSortBy] = usePersistedState<SortBy>('dobetter.pref.home.sort', 'recent', ['recent', 'az', 'za']);
   const [sortSheetVisible, setSortSheetVisible] = React.useState(false);
 
   function gotoNew() {

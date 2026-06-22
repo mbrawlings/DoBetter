@@ -17,6 +17,7 @@ import { GET_PERSON_QUERY, UPDATE_PERSON_MUTATION } from '../graphql/operations'
 import { personToInput } from '../utils/person';
 import { formatEventCountdown, formatEventWhen } from '../utils/date';
 import { colorsLight, fontFamily, radius, shadows } from '../theme/theme';
+import { usePersistedState } from '../hooks/usePersistedState';
 import type { UpcomingEvent } from '../types';
 
 type EventSort = 'soonest' | 'latest';
@@ -51,7 +52,7 @@ export default function EventsScreen({ navigation }: any) {
   const currentEvents: string[] = person?.currentEvents ?? [];
   const upcoming: UpcomingEvent[] = person?.upcomingEvents ?? [];
 
-  const [sort, setSort] = React.useState<EventSort>('soonest');
+  const [sort, setSort] = usePersistedState<EventSort>('dobetter.pref.events.sort', 'soonest', ['soonest', 'latest']);
   const [sortVisible, setSortVisible] = React.useState(false);
 
   const sortedUpcoming = React.useMemo(() => {
