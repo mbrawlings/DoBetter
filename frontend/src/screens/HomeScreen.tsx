@@ -29,6 +29,7 @@ type Person = {
   lastName: string;
   city?: string | null;
   relationship?: string | null;
+  interests?: string[] | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -84,6 +85,19 @@ function passesFilter(p: Person, filter: Filter): boolean {
   }
 }
 
+function matchesSearch(p: Person, query: string): boolean {
+  if (!query) return true;
+  const haystack = [
+    fullName(p),
+    p.city ?? '',
+    p.relationship ?? '',
+    ...(p.interests ?? []),
+  ]
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 export default function HomeScreen() {
   const { data, loading, error, refetch } = useQuery(PERSONS_QUERY, {
     variables: { filter: null },
@@ -113,7 +127,8 @@ export default function HomeScreen() {
     (navigation as any).navigate('Account' as never);
   }
 
-  const filtered = persons.filter((p) => passesFilter(p, filter));
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = persons.filter((p) => passesFilter(p, filter) && matchesSearch(p, q));
   const sorted = React.useMemo(() => sortPersons(filtered, sortBy), [filtered, sortBy]);
 
   const Header = (
@@ -170,11 +185,16 @@ export default function HomeScreen() {
                   placeholder="Search people, interests, places"
                   placeholderTextColor={colorsLight.textMuted}
                   style={styles.searchInput}
-                  returnKeyType="search"
-                  onSubmitEditing={() =>
-                    refetch({ filter: searchQuery ? { search: searchQuery } : null })
-                  }
                 />
+                {searchQuery.length > 0 ? (
+                  <Pressable
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={8}
+                    accessibilityLabel="Clear search"
+                  >
+                    <Icon source="close-circle" size={18} color={colorsLight.textMuted} />
+                  </Pressable>
+                ) : null}
               </View>
             </View>
 
@@ -230,7 +250,11 @@ export default function HomeScreen() {
             </SectionLabel>
             {sorted.length === 0 ? (
               <View style={styles.emptyFiltered}>
-                <Text style={styles.emptyFilteredText}>No people match this filter.</Text>
+                <Text style={styles.emptyFilteredText}>
+                  {q
+                    ? `No results for "${searchQuery.trim()}"`
+                    : 'No people match this filter.'}
+                </Text>
               </View>
             ) : (
               <View style={styles.listGroup}>
