@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { NotificationPrefs } from './notificationPrefs';
+import { isLeapYear, parseMonthDay } from '../utils/date';
 
 // Only schedule reminders that fire within this many days from now. Keeps the
 // pending queue small (iOS caps at 64) and lets recurring dates re-arm on the
@@ -37,18 +38,6 @@ export type PlannedReminder = {
 
 function fullName(p: NotifiablePerson): string {
   return `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim();
-}
-
-// Parse the month/day out of a "YYYY-MM-DD" (or ISO) calendar string.
-function parseMonthDay(value: string): { month: number; day: number } | null {
-  const datePart = value.split('T')[0];
-  const [, mm, dd] = datePart.split('-').map(Number);
-  if (!mm || !dd || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
-  return { month: mm, day: dd };
-}
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 function atTime(date: Date, hour: number, minute: number): Date {

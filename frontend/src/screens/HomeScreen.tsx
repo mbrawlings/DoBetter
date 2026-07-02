@@ -127,6 +127,9 @@ export default function HomeScreen() {
   function gotoAccount() {
     (navigation as any).navigate('Account' as never);
   }
+  function gotoCalendar() {
+    (navigation as any).navigate('Calendar' as never);
+  }
   function gotoImport() {
     (navigation as any).navigate('ImportContacts' as never);
   }
@@ -143,6 +146,7 @@ export default function HomeScreen() {
       large
       trailing={
         <View style={styles.headerActions}>
+          <NavIconAction icon="calendar-month-outline" onPress={gotoCalendar} accessibilityLabel="Calendar" />
           <NavIconAction icon="account-circle-outline" onPress={gotoAccount} accessibilityLabel="Account" />
           {canImport ? (
             <NavIconAction

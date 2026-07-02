@@ -9,6 +9,7 @@ import PersonHubScreen from '../screens/PersonHubScreen';
 import EventsScreen from '../screens/EventsScreen';
 import MomentsScreen from '../screens/MomentsScreen';
 import GiftsScreen from '../screens/GiftsScreen';
+import CalendarScreen from '../screens/CalendarScreen';
 import LoginScreen from '../screens/LoginScreen';
 import AccountScreen from '../screens/AccountScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -60,6 +61,7 @@ function AuthedNavigator() {
       <Stack.Screen name="Events" component={EventsScreen} />
       <Stack.Screen name="Moments" component={MomentsScreen} />
       <Stack.Screen name="Gifts" component={GiftsScreen} />
+      <Stack.Screen name="Calendar" component={CalendarScreen} />
       <Stack.Screen name="Account" component={AccountScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>

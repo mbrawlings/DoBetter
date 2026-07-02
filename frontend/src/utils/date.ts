@@ -7,6 +7,18 @@ export function formatDateYmd(date: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// Parse the month/day out of a "YYYY-MM-DD" (or ISO) calendar string.
+export function parseMonthDay(value: string): { month: number; day: number } | null {
+  const datePart = value.split('T')[0];
+  const [, mm, dd] = datePart.split('-').map(Number);
+  if (!mm || !dd || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  return { month: mm, day: dd };
+}
+
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
 function formatYmdHuman(ymd: string): string {
   const [yyyy, mm, dd] = ymd.split('T')[0].split('-').map(Number);
   if (!yyyy || !mm || !dd) return ymd;
