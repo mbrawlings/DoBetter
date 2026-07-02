@@ -19,9 +19,10 @@ export function buildPersonInput(fields: PersonBioFields) {
   if (fields.employer) input.employer = fields.employer;
   if (fields.workRole) input.workRole = fields.workRole;
   if (fields.relationship) input.relationship = fields.relationship;
-  if (fields.birthDate) input.birthDate = fields.birthDate;
   input.interests = fields.interests;
-  // Sent unconditionally (even when empty) so clearing the field persists via $set.
+  // Nullable fields are sent unconditionally (null when empty) so clearing them
+  // persists: the backend turns null into a $unset instead of leaving the old value.
+  input.birthDate = fields.birthDate || null;
   input.background = fields.background.trim();
   return input;
 }

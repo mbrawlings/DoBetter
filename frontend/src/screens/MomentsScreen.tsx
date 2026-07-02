@@ -99,9 +99,9 @@ export default function MomentsScreen({ navigation }: any) {
             id: item.id,
             input: {
               summary: form.summary || undefined,
-              date: form.date || undefined,
-              channel: form.channel || undefined,
-              location: form.location || undefined,
+              date: form.date || null,
+              channel: form.channel || null,
+              location: form.location || null,
             },
           },
         });

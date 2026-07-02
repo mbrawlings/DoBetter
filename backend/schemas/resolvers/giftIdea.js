@@ -1,5 +1,6 @@
 import GiftIdea from '../../db/models/giftIdea.js';
 import { touchPerson } from './_touchPerson.js';
+import { buildUpdateDoc } from './_updateDoc.js';
 
 const Query = {
   async giftIdeas(_, { personId }, { orgId }) {
@@ -16,7 +17,7 @@ const Mutation = {
   async updateGiftIdea(_, { id, input }, { orgId }) {
     const doc = await GiftIdea.findOneAndUpdate(
       { _id: id, orgId },
-      { $set: input },
+      buildUpdateDoc(input),
       { new: true }
     );
     if (doc) await touchPerson(doc.personId, orgId);

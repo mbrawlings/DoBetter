@@ -1,9 +1,11 @@
 import * as React from 'react';
-import { Keyboard, Platform, View } from 'react-native';
+import { Keyboard, Platform, Pressable, View } from 'react-native';
+import { Icon } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import FieldRow from '../ui/FieldRow';
 import PickerSheet from '../modals/PickerSheet';
 import { formatDateYmd } from '../../utils/date';
+import { colorsLight } from '../../theme/theme';
 
 type Props = {
   label: string;
@@ -47,7 +49,16 @@ export default function DateInput({ label, value, onChange, required, placeholde
     }
   }
 
+  function clear() {
+    setDateObj(undefined);
+    onChange('');
+  }
+
   const display = formatHumanDate(value);
+
+  // On web the transparent <input type="date"> overlay already provides a native
+  // clear affordance, so only add an explicit clear button on native platforms.
+  const canClear = Boolean(value) && Platform.OS !== 'web';
 
   const row = (
     <FieldRow
@@ -57,6 +68,21 @@ export default function DateInput({ label, value, onChange, required, placeholde
       required={required}
       variant="date"
       onPress={Platform.OS === 'web' ? undefined : openPicker}
+      rightSlot={
+        canClear ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Pressable
+              onPress={clear}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={`Clear ${label}`}
+            >
+              <Icon source="close-circle" size={18} color={colorsLight.textFaint} />
+            </Pressable>
+            <Icon source="chevron-down" size={16} color={colorsLight.textFaint} />
+          </View>
+        ) : undefined
+      }
     />
   );
 

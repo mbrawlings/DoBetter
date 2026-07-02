@@ -1,4 +1,5 @@
 import Person from '../../db/models/person.js';
+import { buildUpdateDoc } from './_updateDoc.js';
 
 const Query = {
   async persons(_, { filter }, { orgId }) {
@@ -24,7 +25,7 @@ const Mutation = {
   async updatePerson(_, { id, input }, { orgId }) {
     const doc = await Person.findOneAndUpdate(
       { _id: id, orgId },
-      { $set: input },
+      buildUpdateDoc(input),
       { new: true }
     );
     return doc ? doc.toObject() : null;

@@ -1,5 +1,6 @@
 import Interaction from '../../db/models/interaction.js';
 import { touchPerson } from './_touchPerson.js';
+import { buildUpdateDoc } from './_updateDoc.js';
 
 const Query = {
   async interactions(_, { personId }, { orgId }) {
@@ -12,6 +13,20 @@ const Mutation = {
     const doc = await Interaction.create({ ...input, orgId });
     await touchPerson(input.personId, orgId);
     return doc.toObject();
+  },
+  async updateInteraction(_, { id, input }, { orgId }) {
+    const doc = await Interaction.findOneAndUpdate(
+      { _id: id, orgId },
+      buildUpdateDoc(input),
+      { new: true }
+    );
+    if (doc) await touchPerson(doc.personId, orgId);
+    return doc ? doc.toObject() : null;
+  },
+  async deleteInteraction(_, { id }, { orgId }) {
+    const doc = await Interaction.findOneAndDelete({ _id: id, orgId });
+    if (doc) await touchPerson(doc.personId, orgId);
+    return !!doc;
   },
 };
 
