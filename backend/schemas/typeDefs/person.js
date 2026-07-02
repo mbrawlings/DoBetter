@@ -71,6 +71,7 @@ export default `#graphql
     firstName: String!
     lastName: String!
     birthDate: CalendarDate
+    contactIds: [String!]
     relationship: String
     background: String
     city: String
@@ -79,6 +80,19 @@ export default `#graphql
     interests: [String!]
     currentEvents: [String!]
     upcomingEvents: [UpcomingEventInput!]
+  }
+
+  input ImportContactInput {
+    firstName: String!
+    lastName: String!
+    birthDate: CalendarDate
+    contactId: String!
+  }
+
+  type ImportResult {
+    createdCount: Int!
+    skippedCount: Int!
+    created: [Person!]!
   }
 
   extend type Query {
@@ -90,5 +104,6 @@ export default `#graphql
     createPerson(input: PersonInput!): Person!
     updatePerson(id: ID!, input: PersonInput!): Person!
     deletePerson(id: ID!): Boolean!
+    importContacts(contacts: [ImportContactInput!]!): ImportResult!
   }
 `;

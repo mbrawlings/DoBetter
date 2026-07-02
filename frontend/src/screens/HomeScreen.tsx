@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -126,6 +127,11 @@ export default function HomeScreen() {
   function gotoAccount() {
     (navigation as any).navigate('Account' as never);
   }
+  function gotoImport() {
+    (navigation as any).navigate('ImportContacts' as never);
+  }
+
+  const canImport = Platform.OS !== 'web';
 
   const q = searchQuery.trim().toLowerCase();
   const filtered = persons.filter((p) => passesFilter(p, filter) && matchesSearch(p, q));
@@ -138,6 +144,13 @@ export default function HomeScreen() {
       trailing={
         <View style={styles.headerActions}>
           <NavIconAction icon="account-circle-outline" onPress={gotoAccount} accessibilityLabel="Account" />
+          {canImport ? (
+            <NavIconAction
+              icon="account-multiple-plus-outline"
+              onPress={gotoImport}
+              accessibilityLabel="Import contacts"
+            />
+          ) : null}
           <NavIconAction icon="plus" onPress={gotoNew} accessibilityLabel="Add person" />
         </View>
       }
@@ -237,7 +250,7 @@ export default function HomeScreen() {
             <Text style={styles.loadingText}>Loading…</Text>
           </View>
         ) : showEmpty ? (
-          <EmptyState onAddFirst={gotoNew} />
+          <EmptyState onAddFirst={gotoNew} onImport={canImport ? gotoImport : undefined} />
         ) : (
           <>
             <SectionLabel
@@ -305,7 +318,7 @@ export default function HomeScreen() {
   );
 }
 
-function EmptyState({ onAddFirst }: { onAddFirst: () => void }) {
+function EmptyState({ onAddFirst, onImport }: { onAddFirst: () => void; onImport?: () => void }) {
   return (
     <View style={styles.empty}>
       <View style={styles.emptyMedallion}>
@@ -316,9 +329,11 @@ function EmptyState({ onAddFirst }: { onAddFirst: () => void }) {
         Add someone you care about. Track birthdays, gift ideas, and the moments worth remembering.
       </Text>
       <PrimaryButton label="Add your first person" onPress={onAddFirst} />
-      <Pressable hitSlop={6} style={{ marginTop: 16 }}>
-        <Text style={styles.emptySecondary}>Import from Contacts</Text>
-      </Pressable>
+      {onImport ? (
+        <Pressable hitSlop={6} style={{ marginTop: 16 }} onPress={onImport}>
+          <Text style={styles.emptySecondary}>Import from Contacts</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

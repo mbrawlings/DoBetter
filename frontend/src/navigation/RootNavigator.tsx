@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
+import ImportContactsScreen from '../screens/ImportContactsScreen';
 import PersonFormScreen from '../screens/PersonFormScreen';
 import PersonHubScreen from '../screens/PersonHubScreen';
 import EventsScreen from '../screens/EventsScreen';
@@ -44,6 +45,7 @@ export default function RootNavigator() {
         {token ? (
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="ImportContacts" component={ImportContactsScreen} />
             <Stack.Screen name="PersonHub" component={PersonHubScreen} />
             <Stack.Screen name="Person" component={PersonFormScreen} />
             <Stack.Screen name="Events" component={EventsScreen} />

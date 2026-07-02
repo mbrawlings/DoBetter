@@ -50,6 +50,8 @@ const persons = new Schema(
 persons.index({ firstName: 'text', lastName: 'text', interests: 'text', city: 'text', employer: 'text' });
 // a “due for check-in” index
 persons.index({ orgId: 1, lastContactedAt: 1, communicationCadenceDays: 1, importance: 1 });
+// fast dedup lookups when importing OS contacts
+persons.index({ orgId: 1, contactIds: 1 });
 
 const Person = mongoose.model('Person', persons);
 

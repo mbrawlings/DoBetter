@@ -31,8 +31,23 @@ export const PERSONS_QUERY = gql`
       lastName
       relationship
       city
+      contactIds
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const IMPORT_CONTACTS_MUTATION = gql`
+  mutation ImportContacts($contacts: [ImportContactInput!]!) {
+    importContacts(contacts: $contacts) {
+      createdCount
+      skippedCount
+      created {
+        id
+        firstName
+        lastName
+      }
     }
   }
 `;

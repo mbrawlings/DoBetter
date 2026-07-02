@@ -30,7 +30,13 @@
     },
     "plugins": [
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow DoBetter to access your contacts so you can select people to add."
+        }
+      ]
     ]
   }
 }
