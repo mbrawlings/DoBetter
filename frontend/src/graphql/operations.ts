@@ -32,6 +32,9 @@ export const PERSONS_QUERY = gql`
       relationship
       city
       contactIds
+      birthDate
+      anniversaryDate
+      upcomingEvents { title date startsAt notes }
       createdAt
       updatedAt
     }

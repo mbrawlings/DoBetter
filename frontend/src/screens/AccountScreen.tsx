@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useQuery } from '@apollo/client';
 import { ME_QUERY } from '../graphql/operations';
-import { Avatar, BackButton, NavBar, PrimaryButton } from '../components/ui';
+import { Avatar, BackButton, NavBar, PrimaryButton, SummaryRow } from '../components/ui';
 import ConfirmSheet from '../components/modals/ConfirmSheet';
 import { useAuth } from '../providers/AuthContext';
 import { colorsLight, fontFamily } from '../theme/theme';
@@ -40,6 +40,18 @@ export default function AccountScreen({ navigation }: any) {
           <Avatar firstName={firstName} lastName={lastName} size={72} />
           {me?.name ? <Text style={styles.name}>{me.name}</Text> : null}
           {me?.email ? <Text style={styles.email}>{me.email}</Text> : null}
+        </View>
+
+        <View style={styles.settings}>
+          <Text style={styles.settingsLabel}>SETTINGS</Text>
+          <SummaryRow
+            icon="bell-outline"
+            iconBg={colorsLight.primarySoft}
+            iconColor={colorsLight.primary}
+            title="Notifications"
+            preview="Birthday and event reminders"
+            onPress={() => navigation.navigate('Notifications')}
+          />
         </View>
 
         <View style={styles.footer}>
@@ -95,6 +107,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colorsLight.textMuted,
     marginTop: 4,
+    includeFontPadding: false,
+  },
+  settings: {
+    marginTop: 32,
+  },
+  settingsLabel: {
+    fontFamily: fontFamily.semibold,
+    fontWeight: '600',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: colorsLight.textMuted,
+    marginBottom: 8,
+    marginLeft: 4,
     includeFontPadding: false,
   },
   footer: {

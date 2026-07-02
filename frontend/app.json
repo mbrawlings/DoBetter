@@ -36,6 +36,12 @@
         {
           "contactsPermission": "Allow DoBetter to access your contacts so you can select people to add."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#B85C3E"
+        }
       ]
     ]
   }

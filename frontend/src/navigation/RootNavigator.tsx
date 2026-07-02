@@ -11,7 +11,10 @@ import MomentsScreen from '../screens/MomentsScreen';
 import GiftsScreen from '../screens/GiftsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import AccountScreen from '../screens/AccountScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import { useAuth } from '../providers/AuthContext';
+import { useNotificationSync } from '../notifications/useNotificationSync';
+import { navigationRef } from './navigationRef';
 import { colorsLight } from '../theme/theme';
 
 const Stack = createNativeStackNavigator();
@@ -40,23 +43,33 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorsLight.bg } }}>
-        {token ? (
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="ImportContacts" component={ImportContactsScreen} />
-            <Stack.Screen name="PersonHub" component={PersonHubScreen} />
-            <Stack.Screen name="Person" component={PersonFormScreen} />
-            <Stack.Screen name="Events" component={EventsScreen} />
-            <Stack.Screen name="Moments" component={MomentsScreen} />
-            <Stack.Screen name="Gifts" component={GiftsScreen} />
-            <Stack.Screen name="Account" component={AccountScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      {token ? <AuthedNavigator /> : <UnauthedNavigator />}
     </NavigationContainer>
+  );
+}
+
+function AuthedNavigator() {
+  useNotificationSync();
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorsLight.bg } }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="ImportContacts" component={ImportContactsScreen} />
+      <Stack.Screen name="PersonHub" component={PersonHubScreen} />
+      <Stack.Screen name="Person" component={PersonFormScreen} />
+      <Stack.Screen name="Events" component={EventsScreen} />
+      <Stack.Screen name="Moments" component={MomentsScreen} />
+      <Stack.Screen name="Gifts" component={GiftsScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function UnauthedNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorsLight.bg } }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+    </Stack.Navigator>
   );
 }
