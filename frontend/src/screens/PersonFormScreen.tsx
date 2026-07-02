@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
-import { useMutation, useQuery } from '@apollo/client';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import ChipInput from '../components/inputs/ChipInput';
 import DateInput, { toYmd } from '../components/inputs/DateInput';
 import SelectInput from '../components/inputs/SelectInput';
@@ -20,6 +20,7 @@ import { colorsLight, fontFamily } from '../theme/theme';
 import { buildPersonInput } from '../utils/person';
 import {
   CREATE_PERSON_MUTATION,
+  DELETE_PERSON_MUTATION,
   GET_PERSON_QUERY,
   UPDATE_PERSON_MUTATION,
 } from '../graphql/operations';
@@ -40,8 +41,10 @@ export default function PersonFormScreen({ navigation }: any) {
     fetchPolicy: 'cache-and-network',
   });
 
+  const client = useApolloClient();
   const [createPerson, { error: createError }] = useMutation(CREATE_PERSON_MUTATION);
   const [updatePerson] = useMutation(UPDATE_PERSON_MUTATION);
+  const [deletePerson] = useMutation(DELETE_PERSON_MUTATION);
 
   const person = data?.person;
   const [submitting, setSubmitting] = React.useState(false);
@@ -111,8 +114,7 @@ export default function PersonFormScreen({ navigation }: any) {
   }
 
   function onDeletePerson() {
-    // Backend currently has no deletePerson mutation; the destructive UI is wired per the design spec
-    // and falls back to navigating away. Wire to a mutation once the API exposes one.
+    if (!isEdit || !personId) return;
     Alert.alert(
       'Delete person',
       `Are you sure you want to delete ${firstName} ${lastName}? This can't be undone.`,
@@ -121,7 +123,20 @@ export default function PersonFormScreen({ navigation }: any) {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => navigation.goBack(),
+          onPress: async () => {
+            if (submitting) return;
+            setSubmitting(true);
+            try {
+              await deletePerson({ variables: { id: personId } });
+              client.cache.evict({
+                id: client.cache.identify({ __typename: 'Person', id: personId }),
+              });
+              client.cache.gc();
+              navigation.popToTop();
+            } finally {
+              setSubmitting(false);
+            }
+          },
         },
       ],
     );

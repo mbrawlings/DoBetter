@@ -103,6 +103,10 @@ export const UPDATE_PERSON_MUTATION = gql`
   }
 `;
 
+export const DELETE_PERSON_MUTATION = gql`
+  mutation DeletePerson($id: ID!) { deletePerson(id: $id) }
+`;
+
 export const GIFT_IDEAS_QUERY = gql`
   query GiftIdeas($personId: ID!) { giftIdeas(personId: $personId) { id title notes occasion status priority createdAt } }
 `;

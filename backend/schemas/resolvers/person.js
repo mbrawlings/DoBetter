@@ -1,4 +1,6 @@
 import Person from '../../db/models/person.js';
+import GiftIdea from '../../db/models/giftIdea.js';
+import Interaction from '../../db/models/interaction.js';
 import { buildUpdateDoc } from './_updateDoc.js';
 
 const MAX_IMPORT_BATCH = 500;
@@ -34,7 +36,12 @@ const Mutation = {
   },
   async deletePerson(_, { id }, { orgId }) {
     const res = await Person.deleteOne({ _id: id, orgId });
-    return res.deletedCount === 1;
+    if (res.deletedCount !== 1) return false;
+    await Promise.all([
+      GiftIdea.deleteMany({ orgId, personId: id }),
+      Interaction.deleteMany({ orgId, personId: id }),
+    ]);
+    return true;
   },
   async importContacts(_, { contacts }, { orgId }) {
     if (!Array.isArray(contacts) || contacts.length === 0) {
