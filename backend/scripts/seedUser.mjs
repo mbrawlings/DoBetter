@@ -26,6 +26,9 @@ try {
     user.password = password; // re-hashed by pre-save hook
     if (name) user.name = name;
   }
+  user.emailVerifiedAt = new Date();
+  user.emailVerificationCodeHash = null;
+  user.emailVerificationExpiresAt = null;
   await user.save();
   console.log(`Seeded user ${user.email} (orgId ${FIXED_ID})`);
   await mongoose.disconnect();

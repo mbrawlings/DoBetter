@@ -11,6 +11,8 @@ import MomentsScreen from '../screens/MomentsScreen';
 import GiftsScreen from '../screens/GiftsScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import LoginScreen from '../screens/LoginScreen';
+import SignupScreen from '../screens/SignupScreen';
+import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 import AccountScreen from '../screens/AccountScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import { useAuth } from '../providers/AuthContext';
@@ -72,6 +74,8 @@ function UnauthedNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorsLight.bg } }}>
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
     </Stack.Navigator>
   );
 }

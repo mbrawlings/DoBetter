@@ -12,32 +12,48 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import { useAuth } from '../providers/AuthContext';
 import { colorsLight, fontFamily } from '../theme/theme';
 
-export default function LoginScreen({ navigation }: any) {
-  const { login } = useAuth();
+export default function SignupScreen({ navigation }: any) {
+  const { signup } = useAuth();
+  const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
   const onSubmit = async () => {
     if (submitting) return;
     setError(null);
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
+      const signedUpEmail = await signup(
+        email.trim(),
+        password,
+        name.trim() || undefined
+      );
+      navigation.replace('VerifyEmail', { email: signedUpEmail });
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Login failed';
-      if (message === 'Email not verified') {
-        navigation.navigate('VerifyEmail', { email: email.trim().toLowerCase() });
-        return;
-      }
-      setError(message);
+      setError(e instanceof Error ? e.message : 'Signup failed');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
+  const canSubmit =
+    email.trim().length > 0 &&
+    password.length > 0 &&
+    confirmPassword.length > 0 &&
+    !submitting;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -46,9 +62,18 @@ export default function LoginScreen({ navigation }: any) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.container}>
-          <Text style={styles.title}>DoBetter</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.subtitle}>Sign up to get started</Text>
 
+          <TextInput
+            label="Name (optional)"
+            value={name}
+            onChangeText={setName}
+            mode="outlined"
+            autoCapitalize="words"
+            textContentType="name"
+            style={styles.input}
+          />
           <TextInput
             label="Email"
             value={email}
@@ -59,7 +84,6 @@ export default function LoginScreen({ navigation }: any) {
             keyboardType="email-address"
             textContentType="emailAddress"
             style={styles.input}
-            onSubmitEditing={onSubmit}
           />
           <TextInput
             label="Password"
@@ -68,7 +92,17 @@ export default function LoginScreen({ navigation }: any) {
             mode="outlined"
             secureTextEntry
             autoCapitalize="none"
-            textContentType="password"
+            textContentType="newPassword"
+            style={styles.input}
+          />
+          <TextInput
+            label="Confirm password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            mode="outlined"
+            secureTextEntry
+            autoCapitalize="none"
+            textContentType="newPassword"
             style={styles.input}
             onSubmitEditing={onSubmit}
           />
@@ -76,7 +110,7 @@ export default function LoginScreen({ navigation }: any) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <PrimaryButton
-            label="Sign In"
+            label="Create account"
             full
             loading={submitting}
             disabled={!canSubmit}
@@ -85,11 +119,11 @@ export default function LoginScreen({ navigation }: any) {
           />
 
           <Pressable
-            onPress={() => navigation.navigate('Signup')}
+            onPress={() => navigation.navigate('Login')}
             style={styles.linkWrap}
             disabled={submitting}
           >
-            <Text style={styles.link}>Create account</Text>
+            <Text style={styles.link}>Already have an account? Sign in</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

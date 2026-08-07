@@ -20,6 +20,18 @@ const users = new Schema(
     name: {
       type: String,
     },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    emailVerificationCodeHash: {
+      type: String,
+      default: null,
+    },
+    emailVerificationExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

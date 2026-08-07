@@ -4,6 +4,7 @@ import auth from './resolvers/auth.js';
 import person from './resolvers/person.js';
 import interaction from './resolvers/interaction.js';
 import giftIdea from './resolvers/giftIdea.js';
+import { isEmailVerified } from '../utils/authHelpers.js';
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -86,6 +87,7 @@ const resolvers = {
   },
   User: {
     id: (parent) => (parent.id ?? parent._id?.toString()),
+    emailVerified: (parent) => isEmailVerified(parent),
   },
   Person: {
     id: (parent) => (parent.id ?? parent._id?.toString()),

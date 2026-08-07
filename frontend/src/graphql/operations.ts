@@ -8,8 +8,54 @@ export const LOGIN_MUTATION = gql`
         id
         email
         name
+        emailVerified
       }
     }
+  }
+`;
+
+export const SIGNUP_MUTATION = gql`
+  mutation Signup($email: String!, $password: String!, $name: String) {
+    signup(email: $email, password: $password, name: $name) {
+      email
+    }
+  }
+`;
+
+export const VERIFY_EMAIL_MUTATION = gql`
+  mutation VerifyEmail($email: String!, $code: String!) {
+    verifyEmail(email: $email, code: $code) {
+      token
+      user {
+        id
+        email
+        name
+        emailVerified
+      }
+    }
+  }
+`;
+
+export const RESEND_VERIFICATION_MUTATION = gql`
+  mutation ResendVerificationEmail($email: String!) {
+    resendVerificationEmail(email: $email)
+  }
+`;
+
+export const UPDATE_ME_MUTATION = gql`
+  mutation UpdateMe($name: String) {
+    updateMe(name: $name) {
+      id
+      email
+      name
+      emailVerified
+    }
+  }
+`;
+
+export const CHANGE_PASSWORD_MUTATION = gql`
+  mutation ChangePassword($currentPassword: String!, $newPassword: String!) {
+    changePassword(currentPassword: $currentPassword, newPassword: $newPassword)
   }
 `;
 
@@ -19,6 +65,7 @@ export const ME_QUERY = gql`
       id
       email
       name
+      emailVerified
     }
   }
 `;

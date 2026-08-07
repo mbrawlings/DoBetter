@@ -17,11 +17,10 @@
     "express-rate-limit": "^8.5.2",
     "graphql": "^16.9.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.7.0"
+    "mongoose": "^8.7.0",
+    "resend": "^6.18.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
   }
 }
-
-

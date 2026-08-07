@@ -42,18 +42,30 @@ app.use(cors(corsOptions), express.json());
 // Lightweight health checks for the host's uptime probes (no auth, no DB hit).
 app.get(['/', '/healthz'], (_req, res) => res.status(200).json({ status: 'ok' }));
 
-const loginLimiter = rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { errors: [{ message: 'Too many login attempts, try again later.' }] },
+  message: { errors: [{ message: 'Too many attempts, try again later.' }] },
 });
+
+const AUTH_OPERATION_NAMES = new Set([
+  'Login',
+  'Signup',
+  'VerifyEmail',
+  'ResendVerificationEmail',
+]);
+
+const AUTH_OP_RE =
+  /\b(login|signup|verifyEmail|resendVerificationEmail)\s*\(/;
 
 app.use('/graphql', (req, res, next) => {
   const query = req.body?.query || '';
-  const isLogin = req.body?.operationName === 'Login' || /\blogin\s*\(/.test(query);
-  return isLogin ? loginLimiter(req, res, next) : next();
+  const operationName = req.body?.operationName;
+  const isAuthOp =
+    AUTH_OPERATION_NAMES.has(operationName) || AUTH_OP_RE.test(query);
+  return isAuthOp ? authLimiter(req, res, next) : next();
 });
 
 const server = new ApolloServer({ typeDefs, resolvers });

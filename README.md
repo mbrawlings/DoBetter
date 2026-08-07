@@ -141,11 +141,21 @@ Create environment files as needed:
 
 ```bash
 # Frontend
-cp DoBetter/frontend/.env.example DoBetter/frontend/.env
+cp frontend/.env.example frontend/.env
 
 # Backend
-cp DoBetter/backend/.env.example DoBetter/backend/.env
+cp backend/.env.example backend/.env
 ```
+
+Backend auth/email vars (see `backend/.env.example`):
+
+| Variable | Purpose |
+|----------|---------|
+| `JWT_SECRET` | Sign/verify auth JWTs |
+| `RESEND_API_KEY` | Resend API key for verification emails |
+| `RESEND_FROM_EMAIL` | From address, e.g. `DoBetter <onboarding@resend.dev>` (dev) or a verified domain (prod) |
+
+For production, verify a domain in the [Resend dashboard](https://resend.com/domains) and set `RESEND_FROM_EMAIL` to that domain.
 
 ## 🧪 Testing
 
