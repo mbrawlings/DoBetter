@@ -18,10 +18,12 @@ import {
 import { RELATIONSHIP_OPTIONS } from '../constants/options';
 import { colorsLight, fontFamily } from '../theme/theme';
 import { buildPersonInput } from '../utils/person';
+import { normalizeTag } from '../utils/tags';
 import {
   CREATE_PERSON_MUTATION,
   DELETE_PERSON_MUTATION,
   GET_PERSON_QUERY,
+  PERSON_TAGS_QUERY,
   UPDATE_PERSON_MUTATION,
 } from '../graphql/operations';
 
@@ -40,6 +42,9 @@ export default function PersonFormScreen({ navigation }: any) {
     skip: !isEdit,
     fetchPolicy: 'cache-and-network',
   });
+  const { data: tagsData } = useQuery(PERSON_TAGS_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const client = useApolloClient();
   const [createPerson, { error: createError }] = useMutation(CREATE_PERSON_MUTATION);
@@ -47,6 +52,7 @@ export default function PersonFormScreen({ navigation }: any) {
   const [deletePerson] = useMutation(DELETE_PERSON_MUTATION);
 
   const person = data?.person;
+  const orgTags: string[] = tagsData?.personTags ?? [];
   const [submitting, setSubmitting] = React.useState(false);
 
   const [firstName, setFirstName] = React.useState('');
@@ -57,6 +63,7 @@ export default function PersonFormScreen({ navigation }: any) {
   const [relationship, setRelationship] = React.useState('');
   const [birthDate, setBirthDate] = React.useState('');
   const [interests, setInterests] = React.useState<string[]>([]);
+  const [tags, setTags] = React.useState<string[]>([]);
   const [background, setBackground] = React.useState('');
 
   React.useEffect(() => {
@@ -69,6 +76,7 @@ export default function PersonFormScreen({ navigation }: any) {
       setRelationship(person.relationship ?? '');
       setBirthDate(person.birthDate ? toYmd(person.birthDate) : '');
       setInterests(Array.isArray(person.interests) ? person.interests : []);
+      setTags(Array.isArray(person.tags) ? person.tags : []);
       setBackground(person.background ?? '');
     }
   }, [person]);
@@ -97,6 +105,7 @@ export default function PersonFormScreen({ navigation }: any) {
       relationship,
       birthDate,
       interests,
+      tags,
       background,
     });
 
@@ -238,6 +247,15 @@ export default function PersonFormScreen({ navigation }: any) {
             value={relationship}
             onChange={setRelationship}
             options={RELATIONSHIP_OPTIONS as unknown as string[]}
+          />
+          <ChipInput
+            label="Tags"
+            values={tags}
+            onChange={setTags}
+            normalize={normalizeTag}
+            suggestions={orgTags}
+            placeholder="climbing-crew"
+            helperText="lowercase, hyphens only — e.g. climbing-crew"
           />
         </FieldGroup>
 

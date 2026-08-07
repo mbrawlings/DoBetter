@@ -78,6 +78,7 @@ export const PERSONS_QUERY = gql`
       lastName
       relationship
       city
+      tags
       contactIds
       birthDate
       anniversaryDate
@@ -85,6 +86,12 @@ export const PERSONS_QUERY = gql`
       createdAt
       updatedAt
     }
+  }
+`;
+
+export const PERSON_TAGS_QUERY = gql`
+  query PersonTags {
+    personTags
   }
 `;
 
@@ -137,6 +144,7 @@ export const GET_PERSON_QUERY = gql`
       employer
       workRole
       interests
+      tags
       currentEvents
       upcomingEvents { title date startsAt notes }
     }

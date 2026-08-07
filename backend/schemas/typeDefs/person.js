@@ -17,6 +17,7 @@ export default `#graphql
     workRole: String
 
     interests: [String!]
+    tags: [String!]
     favorites: Favorites
     allergies: [String!]
     dietaryRestrictions: [String!]
@@ -65,6 +66,7 @@ export default `#graphql
   input PersonFilterInput {
     search: String
     interest: String
+    tag: String
   }
 
   input PersonInput {
@@ -78,6 +80,7 @@ export default `#graphql
     employer: String
     workRole: String
     interests: [String!]
+    tags: [String!]
     currentEvents: [String!]
     upcomingEvents: [UpcomingEventInput!]
   }
@@ -98,6 +101,7 @@ export default `#graphql
   extend type Query {
     persons(filter: PersonFilterInput): [Person!]!
     person(id: ID!): Person
+    personTags: [String!]!
   }
 
   extend type Mutation {

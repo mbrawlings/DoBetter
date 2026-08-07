@@ -163,7 +163,7 @@ export default function PersonHubScreen({ navigation }: any) {
           <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
         </Pressable>
 
-        {(birthday || person.employer || lastContact) ? (
+        {(birthday || person.employer || lastContact || (person.tags?.length ?? 0) > 0) ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -172,6 +172,9 @@ export default function PersonHubScreen({ navigation }: any) {
             {birthday ? <KeyFactChip icon="cake-variant-outline" label={`Birthday ${birthday}`} tinted /> : null}
             {person.employer ? <KeyFactChip icon="briefcase-outline" label={person.employer} /> : null}
             {lastContact ? <KeyFactChip icon="message-outline" label={`Last contact ${lastContact}`} /> : null}
+            {(person.tags ?? []).map((tag: string) => (
+              <KeyFactChip key={tag} icon="tag-outline" label={tag} />
+            ))}
           </ScrollView>
         ) : null}
 

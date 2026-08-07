@@ -20,6 +20,7 @@ const persons = new Schema(
     workRole: String,
 
     interests: { type: [String], index: true },
+    tags: { type: [String], default: [] },
     favorites: {
       foods: [String],
       musicArtists: [String],
@@ -47,11 +48,13 @@ const persons = new Schema(
 );
 
 // helpful for name search
-persons.index({ firstName: 'text', lastName: 'text', interests: 'text', city: 'text', employer: 'text' });
+persons.index({ firstName: 'text', lastName: 'text', interests: 'text', tags: 'text', city: 'text', employer: 'text' });
 // a “due for check-in” index
 persons.index({ orgId: 1, lastContactedAt: 1, communicationCadenceDays: 1, importance: 1 });
 // fast dedup lookups when importing OS contacts
 persons.index({ orgId: 1, contactIds: 1 });
+// tag filter lookups
+persons.index({ orgId: 1, tags: 1 });
 
 const Person = mongoose.model('Person', persons);
 

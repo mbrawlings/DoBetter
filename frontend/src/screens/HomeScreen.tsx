@@ -22,8 +22,10 @@ import {
   PrimaryButton,
   SectionLabel,
 } from '../components/ui';
+import SelectSheet from '../components/modals/SelectSheet';
 import SortSheet, { PEOPLE_SORT_OPTIONS, SortBy } from '../components/modals/SortSheet';
 import { usePersistedState } from '../hooks/usePersistedState';
+import { getPref, setPref } from '../providers/prefsStorage';
 
 type Person = {
   id: string;
@@ -32,9 +34,14 @@ type Person = {
   city?: string | null;
   relationship?: string | null;
   interests?: string[] | null;
+  tags?: string[] | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
+
+const TAG_FILTER_KEY = 'dobetter.pref.home.tag';
+const ALL_TAGS = '';
+const ALL_TAGS_LABEL = 'All tags';
 
 const SORT_LABELS: Record<SortBy, string> = {
   recent: 'Recent',
@@ -64,7 +71,7 @@ function sortPersons(list: Person[], sortBy: SortBy): Person[] {
   }
 }
 
-const FILTERS = ['All', 'Family', 'Friends', 'Work', 'Need to reach out'] as const;
+const FILTERS = ['All', 'Family', 'Friends', 'Work'] as const;
 type Filter = (typeof FILTERS)[number];
 
 const FAMILY = new Set(['spouse', 'sibling', 'parent', 'child']);
@@ -82,8 +89,10 @@ function passesFilter(p: Person, filter: Filter): boolean {
       return FRIENDS.has(rel);
     case 'Work':
       return WORK.has(rel);
-    case 'Need to reach out':
-      return false;
+    default: {
+      const _exhaustive: never = filter;
+      return _exhaustive;
+    }
   }
 }
 
@@ -94,10 +103,16 @@ function matchesSearch(p: Person, query: string): boolean {
     p.city ?? '',
     p.relationship ?? '',
     ...(p.interests ?? []),
+    ...(p.tags ?? []),
   ]
     .join(' ')
     .toLowerCase();
   return haystack.includes(query);
+}
+
+function passesTagFilter(p: Person, tag: string): boolean {
+  if (!tag) return true;
+  return (p.tags ?? []).includes(tag);
 }
 
 export default function HomeScreen() {
@@ -118,6 +133,40 @@ export default function HomeScreen() {
   const [filter, setFilter] = usePersistedState<Filter>('dobetter.pref.home.filter', 'All', FILTERS);
   const [sortBy, setSortBy] = usePersistedState<SortBy>('dobetter.pref.home.sort', 'recent', ['recent', 'az', 'za']);
   const [sortSheetVisible, setSortSheetVisible] = React.useState(false);
+  const [tagSheetVisible, setTagSheetVisible] = React.useState(false);
+  const [tagFilter, setTagFilterRaw] = React.useState(ALL_TAGS);
+
+  React.useEffect(() => {
+    let active = true;
+    getPref(TAG_FILTER_KEY).then((stored) => {
+      if (active && stored) setTagFilterRaw(stored);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setTagFilter = React.useCallback((next: string) => {
+    setTagFilterRaw(next);
+    void setPref(TAG_FILTER_KEY, next);
+  }, []);
+
+  const availableTags = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const p of persons) {
+      for (const t of p.tags ?? []) {
+        if (t) set.add(t);
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [persons]);
+
+  React.useEffect(() => {
+    if (loading) return;
+    if (tagFilter && !availableTags.includes(tagFilter)) {
+      setTagFilter(ALL_TAGS);
+    }
+  }, [loading, availableTags, tagFilter, setTagFilter]);
 
   function gotoNew() {
     (navigation as any).navigate('Person' as never);
@@ -138,7 +187,9 @@ export default function HomeScreen() {
   const canImport = Platform.OS !== 'web';
 
   const q = searchQuery.trim().toLowerCase();
-  const filtered = persons.filter((p) => passesFilter(p, filter) && matchesSearch(p, q));
+  const filtered = persons.filter(
+    (p) => passesFilter(p, filter) && passesTagFilter(p, tagFilter) && matchesSearch(p, q),
+  );
   const sorted = React.useMemo(() => sortPersons(filtered, sortBy), [filtered, sortBy]);
 
   const Header = (
@@ -192,7 +243,7 @@ export default function HomeScreen() {
                 <TextInput
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder="Search people, interests, places"
+                  placeholder="Search people, tags, places"
                   placeholderTextColor={colorsLight.textMuted}
                   style={styles.searchInput}
                 />
@@ -237,6 +288,24 @@ export default function HomeScreen() {
                   </Pressable>
                 );
               })}
+              {availableTags.length > 0 ? (
+                <Pressable
+                  onPress={() => setTagSheetVisible(true)}
+                  style={[
+                    styles.filterChip,
+                    tagFilter ? styles.filterChipSelected : styles.filterChipDefault,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipLabel,
+                      { color: tagFilter ? colorsLight.surface : colorsLight.text },
+                    ]}
+                  >
+                    {tagFilter ? `Tags · ${tagFilter}` : 'Tags'}
+                  </Text>
+                </Pressable>
+              ) : null}
             </ScrollView>
           </>
         ) : null}
@@ -263,7 +332,9 @@ export default function HomeScreen() {
                 <Text style={styles.emptyFilteredText}>
                   {q
                     ? `No results for "${searchQuery.trim()}"`
-                    : 'No people match this filter.'}
+                    : tagFilter
+                      ? `No people with tag "${tagFilter}".`
+                      : 'No people match this filter.'}
                 </Text>
               </View>
             ) : (
@@ -310,6 +381,18 @@ export default function HomeScreen() {
           setSortSheetVisible(false);
         }}
         onDismiss={() => setSortSheetVisible(false)}
+      />
+
+      <SelectSheet
+        visible={tagSheetVisible}
+        title="Filter by tag"
+        options={[ALL_TAGS_LABEL, ...availableTags]}
+        value={tagFilter || ALL_TAGS_LABEL}
+        onSelect={(value) => {
+          setTagFilter(value === ALL_TAGS_LABEL ? ALL_TAGS : value);
+          setTagSheetVisible(false);
+        }}
+        onDismiss={() => setTagSheetVisible(false)}
       />
 
       <ActionFab

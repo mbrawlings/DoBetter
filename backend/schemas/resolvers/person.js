@@ -1,9 +1,15 @@
 import Person from '../../db/models/person.js';
 import GiftIdea from '../../db/models/giftIdea.js';
 import Interaction from '../../db/models/interaction.js';
+import { normalizeTag, normalizeTags } from '../../utils/normalizeTags.js';
 import { buildUpdateDoc } from './_updateDoc.js';
 
 const MAX_IMPORT_BATCH = 500;
+
+function withNormalizedTags(input) {
+  if (!input || input.tags === undefined) return input;
+  return { ...input, tags: normalizeTags(input.tags) };
+}
 
 const Query = {
   async persons(_, { filter }, { orgId }) {
@@ -14,22 +20,30 @@ const Query = {
     if (filter?.interest) {
       query.interests = filter.interest;
     }
+    if (filter?.tag) {
+      const tag = normalizeTag(filter.tag);
+      if (tag) query.tags = tag;
+    }
     return Person.find(query).sort({ lastName: 1, firstName: 1 }).lean();
   },
   async person(_, { id }, { orgId }) {
     return Person.findOne({ _id: id, orgId }).lean();
   },
+  async personTags(_, __, { orgId }) {
+    const tags = await Person.distinct('tags', { orgId });
+    return tags.filter((t) => typeof t === 'string' && t.length > 0).sort((a, b) => a.localeCompare(b));
+  },
 };
 
 const Mutation = {
   async createPerson(_, { input }, { orgId }) {
-    const doc = await Person.create({ ...input, orgId });
+    const doc = await Person.create({ ...withNormalizedTags(input), orgId });
     return doc.toObject();
   },
   async updatePerson(_, { id, input }, { orgId }) {
     const doc = await Person.findOneAndUpdate(
       { _id: id, orgId },
-      buildUpdateDoc(input),
+      buildUpdateDoc(withNormalizedTags(input)),
       { new: true }
     );
     return doc ? doc.toObject() : null;

@@ -8,18 +8,38 @@ type Props = {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
+  normalize?: (raw: string) => string | null;
+  suggestions?: string[];
+  helperText?: string;
 };
 
-export default function ChipInput({ label, values, onChange, placeholder }: Props) {
+const MAX_SUGGESTIONS = 6;
+
+export default function ChipInput({
+  label,
+  values,
+  onChange,
+  placeholder,
+  normalize,
+  suggestions,
+  helperText,
+}: Props) {
   const [text, setText] = React.useState('');
   const [editing, setEditing] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<TextInput | null>(null);
+  const suppressBlurAdd = React.useRef(false);
+
+  function resolve(raw: string): string | null {
+    if (normalize) return normalize(raw);
+    const trimmed = raw.trim();
+    return trimmed || null;
+  }
 
   function addChip(raw: string) {
-    const trimmed = raw.trim();
-    if (trimmed && !values.includes(trimmed)) {
-      onChange([...values, trimmed]);
+    const value = resolve(raw);
+    if (value && !values.includes(value)) {
+      onChange([...values, value]);
     }
     setText('');
   }
@@ -43,6 +63,15 @@ export default function ChipInput({ label, values, onChange, placeholder }: Prop
     setTimeout(() => inputRef.current?.focus(), 0);
   }
 
+  const query = text.trim().toLowerCase();
+  const matchedSuggestions =
+    focused && suggestions && suggestions.length > 0
+      ? suggestions
+          .filter((s) => !values.includes(s))
+          .filter((s) => (query ? s.includes(query) : true))
+          .slice(0, MAX_SUGGESTIONS)
+      : [];
+
   return (
     <View style={[styles.container, focused ? styles.containerFocused : null]}>
       <Text style={styles.label}>{label}</Text>
@@ -64,6 +93,11 @@ export default function ChipInput({ label, values, onChange, placeholder }: Prop
               onFocus={() => setFocused(true)}
               onBlur={() => {
                 setFocused(false);
+                if (suppressBlurAdd.current) {
+                  suppressBlurAdd.current = false;
+                  if (!text) setEditing(false);
+                  return;
+                }
                 if (text.trim()) addChip(text);
                 if (!text) setEditing(false);
               }}
@@ -75,6 +109,8 @@ export default function ChipInput({ label, values, onChange, placeholder }: Prop
                 }
               }}
               blurOnSubmit={false}
+              autoCapitalize={normalize ? 'none' : 'sentences'}
+              autoCorrect={!normalize}
               placeholder={placeholder ?? 'Type, then comma'}
               placeholderTextColor={colorsLight.textFaint}
               style={styles.input}
@@ -86,6 +122,23 @@ export default function ChipInput({ label, values, onChange, placeholder }: Prop
           </Pressable>
         )}
       </View>
+      {matchedSuggestions.length > 0 ? (
+        <View style={styles.suggestionRow}>
+          {matchedSuggestions.map((s) => (
+            <Pressable
+              key={s}
+              onPressIn={() => {
+                suppressBlurAdd.current = true;
+              }}
+              onPress={() => addChip(s)}
+              style={styles.suggestionChip}
+            >
+              <Text style={styles.suggestionText}>{s}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {helperText ? <Text style={styles.helper}>{helperText}</Text> : null}
     </View>
   );
 }
@@ -163,6 +216,32 @@ const styles = StyleSheet.create({
     color: colorsLight.text,
     paddingVertical: 0,
     margin: 0,
+    includeFontPadding: false,
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  suggestionChip: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colorsLight.primarySoft,
+  },
+  suggestionText: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 12,
+    color: colorsLight.primary,
+    includeFontPadding: false,
+  },
+  helper: {
+    marginTop: 8,
+    fontFamily: fontFamily.regular,
+    fontSize: 12,
+    color: colorsLight.textFaint,
     includeFontPadding: false,
   },
 });

@@ -1,3 +1,5 @@
+import { normalizeTags } from './tags';
+
 export type PersonBioFields = {
   firstName: string;
   lastName: string;
@@ -7,6 +9,7 @@ export type PersonBioFields = {
   relationship: string;
   birthDate: string;
   interests: string[];
+  tags: string[];
   background: string;
 };
 
@@ -20,6 +23,7 @@ export function buildPersonInput(fields: PersonBioFields) {
   if (fields.workRole) input.workRole = fields.workRole;
   if (fields.relationship) input.relationship = fields.relationship;
   input.interests = fields.interests;
+  input.tags = normalizeTags(fields.tags);
   // Nullable fields are sent unconditionally (null when empty) so clearing them
   // persists: the backend turns null into a $unset instead of leaving the old value.
   input.birthDate = fields.birthDate || null;
@@ -36,6 +40,7 @@ type PersonLike = {
   relationship?: string | null;
   birthDate?: string | null;
   interests?: string[] | null;
+  tags?: string[] | null;
   background?: string | null;
 };
 
@@ -52,6 +57,7 @@ export function personToInput(person: PersonLike) {
     relationship: person.relationship ?? '',
     birthDate: person.birthDate ? person.birthDate.split('T')[0] : '',
     interests: Array.isArray(person.interests) ? person.interests : [],
+    tags: Array.isArray(person.tags) ? person.tags : [],
     background: person.background ?? '',
   });
 }
