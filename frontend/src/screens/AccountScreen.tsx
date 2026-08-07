@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useQuery } from '@apollo/client';
 import { ME_QUERY } from '../graphql/operations';
-import { Avatar, BackButton, NavBar, PrimaryButton, SummaryRow } from '../components/ui';
+import { Avatar, BackButton, FieldGroup, FieldRow, NavBar, PrimaryButton, SummaryRow } from '../components/ui';
 import ConfirmSheet from '../components/modals/ConfirmSheet';
 import FormModal from '../components/modals/FormModal';
 import { useAuth } from '../providers/AuthContext';
@@ -153,15 +153,18 @@ export default function AccountScreen({ navigation }: any) {
         onDismiss={() => setEditNameVisible(false)}
         onSave={onSaveName}
       >
-        <TextInput
-          label="Name"
-          value={nameDraft}
-          onChangeText={setNameDraft}
-          mode="outlined"
-          autoCapitalize="words"
-          textContentType="name"
-          style={styles.modalInput}
-        />
+        <FieldGroup>
+          <FieldRow
+            label="Name"
+            value={nameDraft}
+            onChangeText={setNameDraft}
+            placeholder="Display name"
+            textInputProps={{
+              autoCapitalize: 'words',
+              textContentType: 'name',
+            }}
+          />
+        </FieldGroup>
         {nameError ? <Text style={styles.modalError}>{nameError}</Text> : null}
       </FormModal>
 
@@ -175,36 +178,41 @@ export default function AccountScreen({ navigation }: any) {
         }
         saveLabel="Update"
       >
-        <TextInput
-          label="Current password"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          mode="outlined"
-          secureTextEntry
-          autoCapitalize="none"
-          textContentType="password"
-          style={styles.modalInput}
-        />
-        <TextInput
-          label="New password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          mode="outlined"
-          secureTextEntry
-          autoCapitalize="none"
-          textContentType="newPassword"
-          style={styles.modalInput}
-        />
-        <TextInput
-          label="Confirm new password"
-          value={confirmNewPassword}
-          onChangeText={setConfirmNewPassword}
-          mode="outlined"
-          secureTextEntry
-          autoCapitalize="none"
-          textContentType="newPassword"
-          style={styles.modalInput}
-        />
+        <FieldGroup>
+          <FieldRow
+            label="Current"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Current password"
+            secure
+            textInputProps={{
+              autoCapitalize: 'none',
+              textContentType: 'password',
+            }}
+          />
+          <FieldRow
+            label="New"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="At least 8 characters"
+            secure
+            textInputProps={{
+              autoCapitalize: 'none',
+              textContentType: 'newPassword',
+            }}
+          />
+          <FieldRow
+            label="Confirm"
+            value={confirmNewPassword}
+            onChangeText={setConfirmNewPassword}
+            placeholder="Repeat new password"
+            secure
+            textInputProps={{
+              autoCapitalize: 'none',
+              textContentType: 'newPassword',
+            }}
+          />
+        </FieldGroup>
         {passwordError ? <Text style={styles.modalError}>{passwordError}</Text> : null}
       </FormModal>
 
@@ -287,14 +295,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 10,
   },
-  modalInput: {
-    marginBottom: 12,
-    backgroundColor: colorsLight.surface,
-  },
   modalError: {
     color: colorsLight.danger,
     fontFamily: fontFamily.medium,
     fontSize: 13,
-    marginBottom: 4,
+    marginTop: 12,
+    marginHorizontal: 20,
   },
 });

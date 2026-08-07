@@ -26,6 +26,8 @@ type Props = {
   multiline?: boolean;
   // For multiline inputs: minimum visible lines before it grows with content.
   minLines?: number;
+  // Password-style field with a built-in show/hide toggle.
+  secure?: boolean;
   variant?: Variant;
   onChangeText?: (text: string) => void;
   inputRef?: React.Ref<TextInput>;
@@ -43,6 +45,7 @@ export default function FieldRow({
   required,
   multiline,
   minLines,
+  secure,
   variant = 'text',
   onChangeText,
   inputRef,
@@ -53,6 +56,7 @@ export default function FieldRow({
   style,
 }: Props) {
   const [focused, setFocused] = React.useState(false);
+  const [revealed, setRevealed] = React.useState(false);
   const isMultiline = multiline || Boolean(bodyBelow);
 
   // Auto-grow: start at minLines tall, grow with content up to MULTILINE_MAX_LINES,
@@ -102,6 +106,7 @@ export default function FieldRow({
           placeholder={placeholder}
           placeholderTextColor={colorsLight.textFaint}
           multiline={multiline}
+          secureTextEntry={secure ? !revealed : textInputProps?.secureTextEntry}
           scrollEnabled={autoGrow ? contentHeight > maxHeight : undefined}
           onContentSizeChange={(e) => {
             if (autoGrow) setContentHeight(e.nativeEvent.contentSize.height);
@@ -124,11 +129,25 @@ export default function FieldRow({
     );
   };
 
-  const right =
-    rightSlot ??
-    (variant === 'select' || variant === 'date' ? (
-      <Icon source="chevron-down" size={16} color={colorsLight.textFaint} />
-    ) : null);
+  let right: React.ReactNode = rightSlot;
+  if (!right && secure) {
+    right = (
+      <Pressable
+        hitSlop={8}
+        onPress={() => setRevealed((prev) => !prev)}
+        accessibilityRole="button"
+        accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+      >
+        <Icon
+          source={revealed ? 'eye-off-outline' : 'eye-outline'}
+          size={18}
+          color={colorsLight.textFaint}
+        />
+      </Pressable>
+    );
+  } else if (!right && (variant === 'select' || variant === 'date')) {
+    right = <Icon source="chevron-down" size={16} color={colorsLight.textFaint} />;
+  }
 
   const Wrapper: React.ComponentType<any> = onPress ? Pressable : View;
   const wrapperProps = onPress ? { onPress } : {};

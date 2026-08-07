@@ -16,6 +16,7 @@ export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -66,11 +67,18 @@ export default function LoginScreen({ navigation }: any) {
             value={password}
             onChangeText={setPassword}
             mode="outlined"
-            secureTextEntry
+            secureTextEntry={!showPassword}
             autoCapitalize="none"
             textContentType="password"
             style={styles.input}
             onSubmitEditing={onSubmit}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword((prev) => !prev)}
+                forceTextInputFocus={false}
+              />
+            }
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

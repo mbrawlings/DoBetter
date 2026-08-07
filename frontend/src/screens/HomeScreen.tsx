@@ -15,6 +15,7 @@ import { Icon, Text } from 'react-native-paper';
 import { PERSONS_QUERY } from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
 import {
+  ActionFab,
   Avatar,
   NavBar,
   NavIconAction,
@@ -148,14 +149,6 @@ export default function HomeScreen() {
         <View style={styles.headerActions}>
           <NavIconAction icon="calendar-month-outline" onPress={gotoCalendar} accessibilityLabel="Calendar" />
           <NavIconAction icon="account-circle-outline" onPress={gotoAccount} accessibilityLabel="Account" />
-          {canImport ? (
-            <NavIconAction
-              icon="account-multiple-plus-outline"
-              onPress={gotoImport}
-              accessibilityLabel="Import contacts"
-            />
-          ) : null}
-          <NavIconAction icon="plus" onPress={gotoNew} accessibilityLabel="Add person" />
         </View>
       }
     />
@@ -305,7 +298,7 @@ export default function HomeScreen() {
           </>
         )}
 
-        <View style={{ height: 80 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <SortSheet
@@ -317,6 +310,28 @@ export default function HomeScreen() {
           setSortSheetVisible(false);
         }}
         onDismiss={() => setSortSheetVisible(false)}
+      />
+
+      <ActionFab
+        accessibilityLabel="Add"
+        actions={[
+          ...(canImport
+            ? [
+                {
+                  key: 'import',
+                  label: 'Import from Contacts',
+                  icon: 'account-multiple-plus-outline',
+                  onPress: gotoImport,
+                },
+              ]
+            : []),
+          {
+            key: 'add',
+            label: 'Add person',
+            icon: 'account-plus-outline',
+            onPress: gotoNew,
+          },
+        ]}
       />
     </View>
   );
@@ -332,7 +347,11 @@ function EmptyState({ onAddFirst, onImport }: { onAddFirst: () => void; onImport
       <Text style={styles.emptySubtitle}>
         Add someone you care about. Track birthdays, gift ideas, and the moments worth remembering.
       </Text>
-      <PrimaryButton label="Add your first person" onPress={onAddFirst} />
+      <PrimaryButton
+        label="Add your first person"
+        onPress={onAddFirst}
+        style={{ alignSelf: 'center' }}
+      />
       {onImport ? (
         <Pressable hitSlop={6} style={{ marginTop: 16 }} onPress={onImport}>
           <Text style={styles.emptySecondary}>Import from Contacts</Text>

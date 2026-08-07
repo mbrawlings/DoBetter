@@ -18,6 +18,8 @@ export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -90,21 +92,35 @@ export default function SignupScreen({ navigation }: any) {
             value={password}
             onChangeText={setPassword}
             mode="outlined"
-            secureTextEntry
+            secureTextEntry={!showPassword}
             autoCapitalize="none"
             textContentType="newPassword"
             style={styles.input}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword((prev) => !prev)}
+                forceTextInputFocus={false}
+              />
+            }
           />
           <TextInput
             label="Confirm password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             mode="outlined"
-            secureTextEntry
+            secureTextEntry={!showConfirmPassword}
             autoCapitalize="none"
             textContentType="newPassword"
             style={styles.input}
             onSubmitEditing={onSubmit}
+            right={
+              <TextInput.Icon
+                icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowConfirmPassword((prev) => !prev)}
+                forceTextInputFocus={false}
+              />
+            }
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

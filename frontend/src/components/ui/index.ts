@@ -1,3 +1,5 @@
+export { default as ActionFab } from './ActionFab';
+export type { ActionFabItem } from './ActionFab';
 export { default as Avatar } from './Avatar';
 export { default as ChipGroup } from './ChipGroup';
 export { default as FieldGroup } from './FieldGroup';
