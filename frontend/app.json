@@ -13,20 +13,33 @@
       "backgroundColor": "#B85C3E"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dobetter.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "DoBetter sends reminders for birthdays, anniversaries, and upcoming events."
+      }
     },
     "android": {
+      "package": "com.dobetter.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#B85C3E"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "EXPO_PUBLIC_GRAPHQL_URL": ""
+      "EXPO_PUBLIC_GRAPHQL_URL": "",
+      "eas": {
+        "projectId": "0e9051b1-e562-4e24-8023-8ffb78963689"
+      }
     },
     "plugins": [
       "expo-font",
@@ -43,6 +56,7 @@
           "color": "#B85C3E"
         }
       ]
-    ]
+    ],
+    "owner": "mbrawlings"
   }
 }

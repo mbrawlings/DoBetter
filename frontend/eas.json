@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_GRAPHQL_URL": "https://dobetter-n20r.onrender.com/graphql"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_GRAPHQL_URL": "https://dobetter-n20r.onrender.com/graphql"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
