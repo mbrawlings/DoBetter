@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.dobetter.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "DoBetter sends reminders for birthdays, anniversaries, and upcoming events."
+        "NSUserNotificationsUsageDescription": "DoBetter sends reminders for birthdays, anniversaries, and upcoming events.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
