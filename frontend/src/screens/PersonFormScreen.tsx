@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import ChipInput from '../components/inputs/ChipInput';
 import DateInput, { toYmd } from '../components/inputs/DateInput';
 import SelectInput from '../components/inputs/SelectInput';
+import ConfirmSheet from '../components/modals/ConfirmSheet';
 import {
   Avatar,
   BackButton,
@@ -54,6 +55,9 @@ export default function PersonFormScreen({ navigation }: any) {
   const person = data?.person;
   const orgTags: string[] = tagsData?.personTags ?? [];
   const [submitting, setSubmitting] = React.useState(false);
+  const [confirmVisible, setConfirmVisible] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
@@ -122,33 +126,33 @@ export default function PersonFormScreen({ navigation }: any) {
     }
   }
 
-  function onDeletePerson() {
-    if (!isEdit || !personId) return;
-    Alert.alert(
-      'Delete person',
-      `Are you sure you want to delete ${firstName} ${lastName}? This can't be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            if (submitting) return;
-            setSubmitting(true);
-            try {
-              await deletePerson({ variables: { id: personId } });
-              client.cache.evict({
-                id: client.cache.identify({ __typename: 'Person', id: personId }),
-              });
-              client.cache.gc();
-              navigation.popToTop();
-            } finally {
-              setSubmitting(false);
-            }
-          },
-        },
-      ],
-    );
+  function openDeleteConfirm() {
+    if (!isEdit || !personId || submitting || deleting) return;
+    setDeleteError(null);
+    setConfirmVisible(true);
+  }
+
+  async function onConfirmDelete() {
+    if (!personId || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const { data: result } = await deletePerson({ variables: { id: personId } });
+      if (!result?.deletePerson) {
+        throw new Error('Failed to delete person');
+      }
+      client.cache.evict({
+        id: client.cache.identify({ __typename: 'Person', id: personId }),
+      });
+      client.cache.gc();
+      setConfirmVisible(false);
+      navigation.popToTop();
+    } catch (e) {
+      setConfirmVisible(false);
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete person');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (isEdit && loading && !person) {
@@ -282,10 +286,16 @@ export default function PersonFormScreen({ navigation }: any) {
         {createError ? (
           <Text style={styles.errorBody}>{String((createError as any).message)}</Text>
         ) : null}
+        {deleteError ? <Text style={styles.errorBody}>{deleteError}</Text> : null}
 
         <View style={styles.footer}>
           {isEdit ? (
-            <Pressable onPress={onDeletePerson} hitSlop={6} style={styles.deleteWrap}>
+            <Pressable
+              onPress={openDeleteConfirm}
+              hitSlop={6}
+              style={styles.deleteWrap}
+              disabled={submitting || deleting}
+            >
               <Text style={styles.deleteText}>Delete person</Text>
             </Pressable>
           ) : (
@@ -295,6 +305,17 @@ export default function PersonFormScreen({ navigation }: any) {
           )}
         </View>
       </ScrollView>
+
+      <ConfirmSheet
+        visible={confirmVisible}
+        title="Delete person?"
+        message={`Are you sure you want to delete ${firstName} ${lastName}? This can't be undone.`}
+        confirmLabel="Delete"
+        destructive
+        loading={deleting}
+        onConfirm={onConfirmDelete}
+        onDismiss={() => setConfirmVisible(false)}
+      />
     </View>
   );
 }
