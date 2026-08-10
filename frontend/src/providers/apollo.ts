@@ -1,9 +1,10 @@
-import { ApolloClient, InMemoryCache, HttpLink, from } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache, HttpLink, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
 import { getToken, clearToken } from './tokenStorage';
+import { stripTypename } from '../utils/stripTypename';
 
 export function resolveGraphqlUri(): string {
   if (process.env.EXPO_PUBLIC_GRAPHQL_URL) {
@@ -61,10 +62,18 @@ const errorLink = onError(({ graphQLErrors }) => {
   }
 });
 
+// Cached query results include `__typename`; echoing them into Input types fails validation.
+const stripTypenameLink = new ApolloLink((operation, forward) => {
+  if (operation.variables) {
+    operation.variables = stripTypename(operation.variables);
+  }
+  return forward(operation);
+});
+
 const httpLink = new HttpLink({ uri: graphqlUri });
 
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, authLink, stripTypenameLink, httpLink]),
   cache: new InMemoryCache(),
 });
 

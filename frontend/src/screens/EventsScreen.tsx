@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Icon, Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { useMutation, useQuery } from '@apollo/client';
@@ -14,7 +14,7 @@ import UpcomingEventModal, { UpcomingEventForm } from '../components/modals/Upco
 import ConfirmSheet from '../components/modals/ConfirmSheet';
 import SortSheet, { SortOption } from '../components/modals/SortSheet';
 import { GET_PERSON_QUERY, UPDATE_PERSON_MUTATION } from '../graphql/operations';
-import { personToInput } from '../utils/person';
+import { personToInput, toUpcomingEventInput, toUpcomingEventInputs } from '../utils/person';
 import { formatEventCountdown, formatEventWhen } from '../utils/date';
 import { colorsLight, fontFamily, radius, shadows } from '../theme/theme';
 import { usePersistedState } from '../hooks/usePersistedState';
@@ -72,9 +72,17 @@ export default function EventsScreen({ navigation }: any) {
 
   async function persistUpcoming(next: UpcomingEvent[]) {
     await updatePerson({
-      variables: { id: personId, input: { ...personToInput(person), upcomingEvents: next } },
+      variables: {
+        id: personId,
+        input: {
+          ...personToInput(person),
+          // Map to UpcomingEventInput so cached `__typename` (and any other
+          // non-input fields) never reach GraphQL variable validation.
+          upcomingEvents: toUpcomingEventInputs(next),
+        },
+      },
     });
-    refetch();
+    await refetch();
   }
 
   function openAdd() {
@@ -91,20 +99,24 @@ export default function EventsScreen({ navigation }: any) {
   }
 
   async function handleSave(form: UpcomingEventForm) {
-    const payload: UpcomingEvent = {
+    const payload = toUpcomingEventInput({
       title: form.title,
       date: form.date || undefined,
       startsAt: form.startsAt || undefined,
       notes: form.notes || undefined,
-    };
-    if (editIdx !== null) {
-      const next = [...upcoming];
-      next[editIdx] = payload;
-      await persistUpcoming(next);
-    } else {
-      await persistUpcoming([...upcoming, payload]);
+    });
+    try {
+      if (editIdx !== null) {
+        const next = [...upcoming];
+        next[editIdx] = payload;
+        await persistUpcoming(next);
+      } else {
+        await persistUpcoming([...upcoming, payload]);
+      }
+      setModalVisible(false);
+    } catch {
+      Alert.alert("Couldn't save event", 'Please try again.');
     }
-    setModalVisible(false);
   }
 
   async function handleConfirmDelete() {
@@ -114,6 +126,8 @@ export default function EventsScreen({ navigation }: any) {
       await persistUpcoming(upcoming.filter((_, i) => i !== editIdx));
       setConfirmVisible(false);
       setModalVisible(false);
+    } catch {
+      Alert.alert("Couldn't delete event", 'Please try again.');
     } finally {
       setDeleting(false);
     }

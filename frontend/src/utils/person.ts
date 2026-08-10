@@ -13,6 +13,33 @@ export type PersonBioFields = {
   background: string;
 };
 
+/** GraphQL `UpcomingEventInput` — never include Apollo cache fields like `__typename`. */
+export type UpcomingEventInput = {
+  title: string;
+  date?: string;
+  startsAt?: string;
+  notes?: string;
+};
+
+type UpcomingEventLike = {
+  title?: string | null;
+  date?: string | null;
+  startsAt?: string | null;
+  notes?: string | null;
+};
+
+export function toUpcomingEventInput(event: UpcomingEventLike): UpcomingEventInput {
+  const input: UpcomingEventInput = { title: (event.title ?? '').trim() };
+  if (event.date) input.date = event.date;
+  if (event.startsAt) input.startsAt = event.startsAt;
+  if (event.notes) input.notes = event.notes;
+  return input;
+}
+
+export function toUpcomingEventInputs(events: UpcomingEventLike[]): UpcomingEventInput[] {
+  return events.map(toUpcomingEventInput);
+}
+
 export function buildPersonInput(fields: PersonBioFields) {
   const input: any = {
     firstName: fields.firstName.trim(),
