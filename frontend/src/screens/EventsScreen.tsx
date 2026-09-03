@@ -15,7 +15,7 @@ import ConfirmSheet from '../components/modals/ConfirmSheet';
 import SortSheet, { SortOption } from '../components/modals/SortSheet';
 import { GET_PERSON_QUERY, UPDATE_PERSON_MUTATION } from '../graphql/operations';
 import { personToInput, toUpcomingEventInput, toUpcomingEventInputs } from '../utils/person';
-import { formatEventCountdown, formatEventWhen } from '../utils/date';
+import { eventStartMs, formatEventCountdown, formatEventWhen } from '../utils/date';
 import { colorsLight, fontFamily, radius, shadows } from '../theme/theme';
 import { usePersistedState } from '../hooks/usePersistedState';
 import type { UpcomingEvent } from '../types';
@@ -33,9 +33,7 @@ const SORT_LABELS: Record<EventSort, string> = {
 };
 
 function eventTime(e: UpcomingEvent): number {
-  const iso = e.startsAt || e.date;
-  const t = iso ? new Date(iso).getTime() : NaN;
-  return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
+  return eventStartMs(e);
 }
 
 export default function EventsScreen({ navigation }: any) {
@@ -94,7 +92,7 @@ export default function EventsScreen({ navigation }: any) {
   function openEdit(originalIndex: number) {
     const e = upcoming[originalIndex];
     setEditIdx(originalIndex);
-    setInitial({ title: e.title, date: e.date, startsAt: e.startsAt, notes: e.notes });
+    setInitial({ title: e.title, date: e.date, endDate: e.endDate, startsAt: e.startsAt, notes: e.notes });
     setModalVisible(true);
   }
 
@@ -102,6 +100,7 @@ export default function EventsScreen({ navigation }: any) {
     const payload = toUpcomingEventInput({
       title: form.title,
       date: form.date || undefined,
+      endDate: form.endDate || undefined,
       startsAt: form.startsAt || undefined,
       notes: form.notes || undefined,
     });

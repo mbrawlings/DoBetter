@@ -19,7 +19,7 @@ import {
   INTERACTIONS_QUERY,
 } from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
-import { formatEventCountdown, formatRelativeShort } from '../utils/date';
+import { eventStartMs, formatEventCountdown, formatRelativeShort, isEventUpcomingOrOngoing } from '../utils/date';
 import type { GiftIdea, Interaction, UpcomingEvent } from '../types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -35,11 +35,10 @@ function birthdayShort(value?: string | null): string {
 }
 
 function nearestUpcoming(list: UpcomingEvent[]): UpcomingEvent | undefined {
-  const future = list
-    .map((e) => ({ e, t: new Date(e.startsAt || e.date || '').getTime() }))
-    .filter((x) => !Number.isNaN(x.t) && x.t >= Date.now())
-    .sort((a, b) => a.t - b.t);
-  return future[0]?.e ?? list[0];
+  const relevant = list
+    .filter((e) => isEventUpcomingOrOngoing(e))
+    .sort((a, b) => eventStartMs(a) - eventStartMs(b));
+  return relevant[0] ?? list[0];
 }
 
 export default function PersonHubScreen({ navigation }: any) {

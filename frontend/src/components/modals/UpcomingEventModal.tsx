@@ -23,6 +23,7 @@ type Props = {
 export default function UpcomingEventModal({ visible, titleText, initial, onDismiss, onSave, onDelete }: Props) {
   const [title, setTitle] = React.useState('');
   const [date, setDate] = React.useState('');
+  const [endDate, setEndDate] = React.useState('');
   const [time, setTime] = React.useState('');
   const [allDay, setAllDay] = React.useState(true);
   const [notes, setNotes] = React.useState('');
@@ -34,25 +35,45 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
       const { ymd, time: t } = splitIso(initial.startsAt);
       setAllDay(false);
       setDate(ymd);
+      setEndDate('');
       setTime(t);
     } else {
       setAllDay(true);
       setDate(initial?.date ?? '');
+      setEndDate(initial?.endDate ?? '');
       setTime('');
     }
   }, [initial, visible]);
 
   function handleSave() {
     if (allDay) {
-      return onSave({ title, date: date || undefined, startsAt: undefined, notes });
+      const start = date || undefined;
+      const end = start && endDate && endDate > start ? endDate : undefined;
+      return onSave({ title, date: start, endDate: end, startsAt: undefined, notes });
     }
     const startsAt = date && time ? combineDateAndTime(date, time) : undefined;
-    return onSave({ title, date: date || undefined, startsAt, notes });
+    return onSave({ title, date: date || undefined, endDate: undefined, startsAt, notes });
   }
 
   function toggleAllDay(next: boolean) {
     setAllDay(next);
-    if (!next && !time) setTime('09:00');
+    if (!next) {
+      setEndDate('');
+      if (!time) setTime('09:00');
+    }
+  }
+
+  function handleStartDate(next: string) {
+    setDate(next);
+    if (endDate && next && endDate <= next) setEndDate('');
+  }
+
+  function handleEndDate(next: string) {
+    if (date && next && next <= date) {
+      setEndDate('');
+      return;
+    }
+    setEndDate(next);
   }
 
   return (
@@ -80,8 +101,16 @@ export default function UpcomingEventModal({ visible, titleText, initial, onDism
             <Switch value={allDay} onValueChange={toggleAllDay} color={colorsLight.primary} />
           }
         />
-        <DateInput label="Date" value={date} onChange={(v) => setDate(v)} />
-        {!allDay ? <TimeInput label="Time" value={time} onChange={(v) => setTime(v)} /> : null}
+        <DateInput
+          label={allDay && endDate ? 'Start date' : 'Date'}
+          value={date}
+          onChange={handleStartDate}
+        />
+        {allDay ? (
+          <DateInput label="End date" value={endDate} onChange={handleEndDate} placeholder="Optional" />
+        ) : (
+          <TimeInput label="Time" value={time} onChange={(v) => setTime(v)} />
+        )}
         <FieldRow
           label="Notes"
           value={notes}

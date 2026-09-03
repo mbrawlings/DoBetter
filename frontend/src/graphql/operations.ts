@@ -82,7 +82,7 @@ export const PERSONS_QUERY = gql`
       contactIds
       birthDate
       anniversaryDate
-      upcomingEvents { title date startsAt notes }
+      upcomingEvents { title date endDate startsAt notes }
       createdAt
       updatedAt
     }
@@ -146,7 +146,7 @@ export const GET_PERSON_QUERY = gql`
       interests
       tags
       currentEvents
-      upcomingEvents { title date startsAt notes }
+      upcomingEvents { title date endDate startsAt notes }
     }
   }
 `;

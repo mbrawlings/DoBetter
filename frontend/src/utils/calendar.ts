@@ -1,4 +1,4 @@
-import { formatDateYmd, isLeapYear, parseMonthDay, splitIso } from './date';
+import { eachYmdInclusive, formatDateYmd, isLeapYear, parseMonthDay, splitIso } from './date';
 
 export type CalendarKind = 'birthday' | 'anniversary' | 'event';
 
@@ -11,6 +11,8 @@ export type CalendarItem = {
   ymd: string;
   startsAt?: string;
   notes?: string;
+  rangeStart?: string;
+  rangeEnd?: string;
 };
 
 export type CalendarPerson = {
@@ -22,6 +24,7 @@ export type CalendarPerson = {
   upcomingEvents?: Array<{
     title?: string | null;
     date?: string | null;
+    endDate?: string | null;
     startsAt?: string | null;
     notes?: string | null;
   } | null> | null;
@@ -108,23 +111,30 @@ export function buildCalendarItems(persons: CalendarPerson[], year: number): Cal
     const events = person.upcomingEvents ?? [];
     events.forEach((event, idx) => {
       if (!event?.title) return;
-      let ymd: string | null = null;
+      let startYmd: string | null = null;
       if (event.startsAt) {
-        ymd = splitIso(event.startsAt).ymd;
+        startYmd = splitIso(event.startsAt).ymd;
       } else if (event.date) {
-        ymd = event.date.split('T')[0];
+        startYmd = event.date.split('T')[0];
       }
-      if (!ymd) return;
-      items.push({
-        id: `${person.id}:event:${ymd}:${idx}`,
-        personId: person.id,
-        personName: name,
-        kind: 'event',
-        title: event.title,
-        ymd,
-        startsAt: event.startsAt ?? undefined,
-        notes: event.notes ?? undefined,
-      });
+      if (!startYmd) return;
+      const endYmd = event.endDate?.split('T')[0];
+      const rangeEnd = !event.startsAt && endYmd && endYmd > startYmd ? endYmd : undefined;
+      const days = rangeEnd ? eachYmdInclusive(startYmd, rangeEnd) : [startYmd];
+      for (const ymd of days) {
+        items.push({
+          id: `${person.id}:event:${ymd}:${idx}`,
+          personId: person.id,
+          personName: name,
+          kind: 'event',
+          title: event.title,
+          ymd,
+          startsAt: event.startsAt ?? undefined,
+          notes: event.notes ?? undefined,
+          rangeStart: rangeEnd ? startYmd : undefined,
+          rangeEnd,
+        });
+      }
     });
   }
 

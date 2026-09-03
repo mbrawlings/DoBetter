@@ -19,10 +19,94 @@ export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
+function toYmd(value: string): string {
+  return value.split('T')[0];
+}
+
+function localDateFromYmd(ymd: string): Date | null {
+  const [yyyy, mm, dd] = toYmd(ymd).split('-').map(Number);
+  if (!yyyy || !mm || !dd) return null;
+  return new Date(yyyy, mm - 1, dd);
+}
+
 function formatYmdHuman(ymd: string): string {
-  const [yyyy, mm, dd] = ymd.split('T')[0].split('-').map(Number);
+  const [yyyy, mm, dd] = toYmd(ymd).split('-').map(Number);
   if (!yyyy || !mm || !dd) return ymd;
   return `${MONTHS[mm - 1]} ${dd}, ${yyyy}`;
+}
+
+export function addCalendarDays(ymd: string, days: number): string {
+  const date = localDateFromYmd(ymd);
+  if (!date) return toYmd(ymd);
+  date.setDate(date.getDate() + days);
+  return formatDateYmd(date);
+}
+
+// Inclusive YYYY-MM-DD walk. Caps at a year so a bad range can't explode the calendar.
+export function eachYmdInclusive(start: string, end: string): string[] {
+  const from = toYmd(start);
+  const to = toYmd(end);
+  if (!from) return [];
+  if (!to || to <= from) return [from];
+  const out: string[] = [];
+  let cur = from;
+  for (let i = 0; i < 366 && cur <= to; i++) {
+    out.push(cur);
+    cur = addCalendarDays(cur, 1);
+  }
+  return out;
+}
+
+function daysInclusive(start: string, end: string): number {
+  const a = localDateFromYmd(start);
+  const b = localDateFromYmd(end);
+  if (!a || !b) return 1;
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
+}
+
+export function formatYmdRange(start: string, end: string): string {
+  const from = toYmd(start);
+  const to = toYmd(end);
+  if (!to || to <= from) return formatYmdHuman(from);
+  const [sy, sm, sd] = from.split('-').map(Number);
+  const [ey, em, ed] = to.split('-').map(Number);
+  if (sy === ey && sm === em) return `${MONTHS[sm - 1]} ${sd}–${ed}, ${sy}`;
+  if (sy === ey) return `${MONTHS[sm - 1]} ${sd} – ${MONTHS[em - 1]} ${ed}, ${sy}`;
+  return `${MONTHS[sm - 1]} ${sd}, ${sy} – ${MONTHS[em - 1]} ${ed}, ${ey}`;
+}
+
+type EventWhen = {
+  date?: string;
+  endDate?: string;
+  startsAt?: string;
+};
+
+function eventRangeEndYmd(event: EventWhen): string | undefined {
+  const start = event.date ? toYmd(event.date) : undefined;
+  const end = event.endDate ? toYmd(event.endDate) : undefined;
+  if (start && end && end > start) return end;
+  return undefined;
+}
+
+// True if the event hasn't ended yet (in progress or still upcoming).
+export function isEventUpcomingOrOngoing(event: EventWhen, now: Date = new Date()): boolean {
+  if (event.startsAt) {
+    const t = new Date(event.startsAt).getTime();
+    return !Number.isNaN(t) && t >= now.getTime();
+  }
+  const start = event.date ? toYmd(event.date) : '';
+  if (!start) return false;
+  const end = eventRangeEndYmd(event) ?? start;
+  return end >= formatDateYmd(now);
+}
+
+export function eventStartMs(event: EventWhen): number {
+  if (event.startsAt) {
+    const t = new Date(event.startsAt).getTime();
+    return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
+  }
+  const start = event.date ? localDateFromYmd(event.date) : null;
+  return start ? start.getTime() : Number.POSITIVE_INFINITY;
 }
 
 // Combine a calendar date and a local time-of-day into a UTC instant (ISO string).
@@ -55,18 +139,9 @@ export function formatRelativeShort(value?: string | null): string {
   return `${Math.floor(days / 365)}y`;
 }
 
-// Relative future label for an upcoming event, e.g. "in 9 days", "in 2 months".
-// Returns { soon, label } where `soon` flags events within ~30 days (for tinting).
-export function formatEventCountdown(event: { date?: string; startsAt?: string }): {
-  soon: boolean;
-  label: string;
-} {
-  const iso = event.startsAt || event.date;
-  if (!iso) return { soon: false, label: '' };
-  const target = new Date(iso).getTime();
-  if (Number.isNaN(target)) return { soon: false, label: '' };
+function countdownFromStart(target: Date): { soon: boolean; label: string } {
   const day = 86_400_000;
-  const days = Math.ceil((target - Date.now()) / day);
+  const days = Math.ceil((target.getTime() - Date.now()) / day);
   if (days < 0) return { soon: false, label: '' };
   if (days === 0) return { soon: true, label: 'today' };
   if (days === 1) return { soon: true, label: 'tomorrow' };
@@ -77,8 +152,36 @@ export function formatEventCountdown(event: { date?: string; startsAt?: string }
   return { soon: false, label: `in ${years} ${years === 1 ? 'year' : 'years'}` };
 }
 
-// Display an event's "when": a precise local date+time for timed events, else a calendar date.
-export function formatEventWhen(event: { date?: string; startsAt?: string }): string {
+// Relative future label for an upcoming event, e.g. "in 9 days", "in 2 months".
+// Multi-day all-day events that have already started show "day 3 of 8".
+// Returns { soon, label } where `soon` flags events within ~30 days (for tinting).
+export function formatEventCountdown(event: EventWhen): {
+  soon: boolean;
+  label: string;
+} {
+  if (!event.startsAt) {
+    const startYmd = event.date ? toYmd(event.date) : '';
+    const endYmd = eventRangeEndYmd(event);
+    if (startYmd && endYmd) {
+      const today = formatDateYmd(new Date());
+      if (today > endYmd) return { soon: false, label: '' };
+      if (today >= startYmd) {
+        const total = daysInclusive(startYmd, endYmd);
+        const dayNum = daysInclusive(startYmd, today);
+        return { soon: true, label: `day ${dayNum} of ${total}` };
+      }
+    }
+    const start = startYmd ? localDateFromYmd(startYmd) : null;
+    if (!start) return { soon: false, label: '' };
+    return countdownFromStart(start);
+  }
+  const target = new Date(event.startsAt);
+  if (Number.isNaN(target.getTime())) return { soon: false, label: '' };
+  return countdownFromStart(target);
+}
+
+// Display an event's "when": a precise local date+time for timed events, else a calendar date or range.
+export function formatEventWhen(event: EventWhen): string {
   if (event.startsAt) {
     return new Date(event.startsAt).toLocaleString(undefined, {
       month: 'short',
@@ -87,6 +190,9 @@ export function formatEventWhen(event: { date?: string; startsAt?: string }): st
       minute: '2-digit',
     });
   }
-  if (event.date) return formatYmdHuman(event.date);
+  if (event.date) {
+    const end = eventRangeEndYmd(event);
+    return end ? formatYmdRange(event.date, end) : formatYmdHuman(event.date);
+  }
   return '';
 }

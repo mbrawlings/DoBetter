@@ -17,6 +17,7 @@ export type PersonBioFields = {
 export type UpcomingEventInput = {
   title: string;
   date?: string;
+  endDate?: string;
   startsAt?: string;
   notes?: string;
 };
@@ -24,6 +25,7 @@ export type UpcomingEventInput = {
 type UpcomingEventLike = {
   title?: string | null;
   date?: string | null;
+  endDate?: string | null;
   startsAt?: string | null;
   notes?: string | null;
 };
@@ -31,6 +33,7 @@ type UpcomingEventLike = {
 export function toUpcomingEventInput(event: UpcomingEventLike): UpcomingEventInput {
   const input: UpcomingEventInput = { title: (event.title ?? '').trim() };
   if (event.date) input.date = event.date;
+  if (event.endDate) input.endDate = event.endDate;
   if (event.startsAt) input.startsAt = event.startsAt;
   if (event.notes) input.notes = event.notes;
   return input;

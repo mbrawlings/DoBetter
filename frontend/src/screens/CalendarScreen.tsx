@@ -7,7 +7,7 @@ import { useQuery } from '@apollo/client';
 import { BackButton, NavBar, SectionLabel } from '../components/ui';
 import { PERSONS_QUERY } from '../graphql/operations';
 import { colorsLight, fontFamily, radius, shadows } from '../theme/theme';
-import { formatDateYmd } from '../utils/date';
+import { formatDateYmd, formatYmdRange } from '../utils/date';
 import {
   buildAgenda,
   buildCalendarItems,
@@ -204,7 +204,9 @@ function DayItemRow({ item, onPress }: { item: CalendarItem; onPress: () => void
   // Birthday/anniversary titles already contain the person's name; events don't,
   // so surface who it belongs to in the subtitle for the global calendar view.
   const who = item.kind === 'event' ? item.personName : '';
-  const subtitleParts = [who, timeLabel(item), item.notes].filter(Boolean);
+  const range =
+    item.rangeStart && item.rangeEnd ? formatYmdRange(item.rangeStart, item.rangeEnd) : '';
+  const subtitleParts = [who, range || timeLabel(item), item.notes].filter(Boolean);
   const subtitle = subtitleParts.join(' · ');
   const tint = KIND_COLORS[item.kind];
   return (

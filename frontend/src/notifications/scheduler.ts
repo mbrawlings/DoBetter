@@ -24,6 +24,7 @@ export type NotifiablePerson = {
   upcomingEvents?: Array<{
     title?: string | null;
     date?: string | null;
+    endDate?: string | null;
     startsAt?: string | null;
     notes?: string | null;
   } | null> | null;

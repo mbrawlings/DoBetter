@@ -52,6 +52,7 @@ export default `#graphql
   type UpcomingEvent {
     title: String
     date: CalendarDate
+    endDate: CalendarDate
     startsAt: Date
     notes: String
   }
@@ -59,6 +60,7 @@ export default `#graphql
   input UpcomingEventInput {
     title: String
     date: CalendarDate
+    endDate: CalendarDate
     startsAt: Date
     notes: String
   }

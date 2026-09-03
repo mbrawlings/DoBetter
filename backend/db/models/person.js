@@ -35,7 +35,7 @@ const persons = new Schema(
     wishlistLinks: [String],
 
     currentEvents: [String],
-    upcomingEvents: [{ title: String, date: String, startsAt: Date, notes: String }],
+    upcomingEvents: [{ title: String, date: String, endDate: String, startsAt: Date, notes: String }],
 
     pinnedNotes: [String],
     lastContactedAt: Date,
