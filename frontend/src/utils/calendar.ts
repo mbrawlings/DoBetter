@@ -1,4 +1,12 @@
-import { eachYmdInclusive, formatDateYmd, isLeapYear, parseMonthDay, splitIso } from './date';
+import {
+  anniversaryTitle,
+  birthdayTitle,
+  eachYmdInclusive,
+  formatDateYmd,
+  isLeapYear,
+  parseMonthDay,
+  splitIso,
+} from './date';
 
 export type CalendarKind = 'birthday' | 'anniversary' | 'event';
 
@@ -19,6 +27,7 @@ export type CalendarPerson = {
   id: string;
   firstName?: string | null;
   lastName?: string | null;
+  relationship?: string | null;
   birthDate?: string | null;
   anniversaryDate?: string | null;
   upcomingEvents?: Array<{
@@ -84,7 +93,7 @@ export function buildCalendarItems(persons: CalendarPerson[], year: number): Cal
             personId: person.id,
             personName: name,
             kind: 'birthday',
-            title: `${name}'s birthday`,
+            title: birthdayTitle(name, person.birthDate, y),
             ymd,
           });
         }
@@ -101,7 +110,7 @@ export function buildCalendarItems(persons: CalendarPerson[], year: number): Cal
             personId: person.id,
             personName: name,
             kind: 'anniversary',
-            title: `${name}'s anniversary`,
+            title: anniversaryTitle(name, person.anniversaryDate, y, person.relationship),
             ymd,
           });
         }

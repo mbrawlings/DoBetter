@@ -77,6 +77,7 @@ export default `#graphql
     birthDate: CalendarDate
     contactIds: [String!]
     relationship: String
+    anniversaryDate: CalendarDate
     background: String
     city: String
     employer: String

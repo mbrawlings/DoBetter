@@ -11,6 +11,10 @@ function withNormalizedTags(input) {
   return { ...input, tags: normalizeTags(input.tags) };
 }
 
+function withoutNulls(input) {
+  return Object.fromEntries(Object.entries(input ?? {}).filter(([, v]) => v !== null));
+}
+
 const Query = {
   async persons(_, { filter }, { orgId }) {
     const query = { orgId };
@@ -37,7 +41,7 @@ const Query = {
 
 const Mutation = {
   async createPerson(_, { input }, { orgId }) {
-    const doc = await Person.create({ ...withNormalizedTags(input), orgId });
+    const doc = await Person.create({ ...withoutNulls(withNormalizedTags(input)), orgId });
     return doc.toObject();
   },
   async updatePerson(_, { id, input }, { orgId }) {

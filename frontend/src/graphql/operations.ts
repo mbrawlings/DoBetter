@@ -138,6 +138,7 @@ export const GET_PERSON_QUERY = gql`
       firstName
       lastName
       birthDate
+      anniversaryDate
       relationship
       background
       city

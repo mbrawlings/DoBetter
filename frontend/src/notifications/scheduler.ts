@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { NotificationPrefs } from './notificationPrefs';
-import { isLeapYear, parseMonthDay } from '../utils/date';
+import { anniversaryTitle, birthdayTitle, isLeapYear, parseMonthDay } from '../utils/date';
 
 // Only schedule reminders that fire within this many days from now. Keeps the
 // pending queue small (iOS caps at 64) and lets recurring dates re-arm on the
@@ -19,6 +19,7 @@ export type NotifiablePerson = {
   id: string;
   firstName?: string | null;
   lastName?: string | null;
+  relationship?: string | null;
   birthDate?: string | null;
   anniversaryDate?: string | null;
   upcomingEvents?: Array<{
@@ -66,13 +67,13 @@ function nextRecurringTrigger(
   prefs: NotificationPrefs,
   now: Date,
   windowEnd: Date,
-): Date | null {
+): { trigger: Date; year: number } | null {
   const startYear = now.getFullYear();
   for (const year of [startYear, startYear + 1]) {
     const safeDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
     const occurrence = atTime(new Date(year, month - 1, safeDay), prefs.hour, prefs.minute);
     const trigger = minusDays(occurrence, prefs.leadDays);
-    if (trigger >= now && trigger <= windowEnd) return trigger;
+    if (trigger >= now && trigger <= windowEnd) return { trigger, year };
   }
   return null;
 }
@@ -93,11 +94,11 @@ export function computeReminders(
     if (person.birthDate) {
       const md = parseMonthDay(person.birthDate);
       if (md) {
-        const trigger = nextRecurringTrigger(md.month, md.day, prefs, now, windowEnd);
-        if (trigger) {
+        const next = nextRecurringTrigger(md.month, md.day, prefs, now, windowEnd);
+        if (next) {
           reminders.push({
-            triggerAt: trigger,
-            title: `${name}'s birthday`,
+            triggerAt: next.trigger,
+            title: birthdayTitle(name, person.birthDate, next.year),
             body: `Their birthday is ${label}.`,
             data: { personId: person.id, kind: 'birthday' },
           });
@@ -108,12 +109,12 @@ export function computeReminders(
     if (person.anniversaryDate) {
       const md = parseMonthDay(person.anniversaryDate);
       if (md) {
-        const trigger = nextRecurringTrigger(md.month, md.day, prefs, now, windowEnd);
-        if (trigger) {
+        const next = nextRecurringTrigger(md.month, md.day, prefs, now, windowEnd);
+        if (next) {
           reminders.push({
-            triggerAt: trigger,
-            title: `${name}'s anniversary`,
-            body: `Their anniversary is ${label}.`,
+            triggerAt: next.trigger,
+            title: anniversaryTitle(name, person.anniversaryDate, next.year, person.relationship),
+            body: `${person.relationship === 'spouse' ? 'Your' : 'Their'} anniversary is ${label}.`,
             data: { personId: person.id, kind: 'anniversary' },
           });
         }

@@ -8,6 +8,7 @@ export type PersonBioFields = {
   workRole: string;
   relationship: string;
   birthDate: string;
+  anniversaryDate: string;
   interests: string[];
   tags: string[];
   background: string;
@@ -48,15 +49,17 @@ export function buildPersonInput(fields: PersonBioFields) {
     firstName: fields.firstName.trim(),
     lastName: fields.lastName.trim(),
   };
-  if (fields.city) input.city = fields.city;
-  if (fields.employer) input.employer = fields.employer;
-  if (fields.workRole) input.workRole = fields.workRole;
-  if (fields.relationship) input.relationship = fields.relationship;
   input.interests = fields.interests;
   input.tags = normalizeTags(fields.tags);
   // Nullable fields are sent unconditionally (null when empty) so clearing them
-  // persists: the backend turns null into a $unset instead of leaving the old value.
+  // persists: the backend turns null into a $unset, while an omitted key leaves
+  // the old value in place.
+  input.city = fields.city.trim() || null;
+  input.employer = fields.employer.trim() || null;
+  input.workRole = fields.workRole.trim() || null;
+  input.relationship = fields.relationship.trim() || null;
   input.birthDate = fields.birthDate || null;
+  input.anniversaryDate = fields.anniversaryDate || null;
   input.background = fields.background.trim();
   return input;
 }
@@ -69,6 +72,7 @@ type PersonLike = {
   workRole?: string | null;
   relationship?: string | null;
   birthDate?: string | null;
+  anniversaryDate?: string | null;
   interests?: string[] | null;
   tags?: string[] | null;
   background?: string | null;
@@ -86,6 +90,7 @@ export function personToInput(person: PersonLike) {
     workRole: person.workRole ?? '',
     relationship: person.relationship ?? '',
     birthDate: person.birthDate ? person.birthDate.split('T')[0] : '',
+    anniversaryDate: person.anniversaryDate ? person.anniversaryDate.split('T')[0] : '',
     interests: Array.isArray(person.interests) ? person.interests : [],
     tags: Array.isArray(person.tags) ? person.tags : [],
     background: person.background ?? '',

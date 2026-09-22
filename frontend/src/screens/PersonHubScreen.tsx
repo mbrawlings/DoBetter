@@ -27,7 +27,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const ABOUT_PREVIEW_LINES = 4;
 const ABOUT_LINE_HEIGHT = 22;
 
-function birthdayShort(value?: string | null): string {
+function monthDayShort(value?: string | null): string {
   if (!value) return '';
   const [, mm, dd] = value.split('T')[0].split('-').map(Number);
   if (!mm || !dd) return '';
@@ -117,7 +117,8 @@ export default function PersonHubScreen({ navigation }: any) {
   const subtitle = [person.relationship, person.city].filter(Boolean).join(' · ');
 
   const lastContact = moments.length ? formatRelativeShort(moments[0].date) : '';
-  const birthday = birthdayShort(person.birthDate);
+  const birthday = monthDayShort(person.birthDate);
+  const anniversary = monthDayShort(person.anniversaryDate);
 
   const eventsCount = currentEvents.length + upcoming.length;
   const near = nearestUpcoming(upcoming);
@@ -162,13 +163,14 @@ export default function PersonHubScreen({ navigation }: any) {
           <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
         </Pressable>
 
-        {(birthday || person.employer || lastContact || (person.tags?.length ?? 0) > 0) ? (
+        {(birthday || anniversary || person.employer || lastContact || (person.tags?.length ?? 0) > 0) ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsRow}
           >
             {birthday ? <KeyFactChip icon="cake-variant-outline" label={`Birthday ${birthday}`} tinted /> : null}
+            {anniversary ? <KeyFactChip icon="heart-outline" label={`Anniversary ${anniversary}`} tinted /> : null}
             {person.employer ? <KeyFactChip icon="briefcase-outline" label={person.employer} /> : null}
             {lastContact ? <KeyFactChip icon="message-outline" label={`Last contact ${lastContact}`} /> : null}
             {(person.tags ?? []).map((tag: string) => (

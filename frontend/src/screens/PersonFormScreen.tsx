@@ -66,6 +66,7 @@ export default function PersonFormScreen({ navigation }: any) {
   const [workRole, setWorkRole] = React.useState('');
   const [relationship, setRelationship] = React.useState('');
   const [birthDate, setBirthDate] = React.useState('');
+  const [anniversaryDate, setAnniversaryDate] = React.useState('');
   const [interests, setInterests] = React.useState<string[]>([]);
   const [tags, setTags] = React.useState<string[]>([]);
   const [background, setBackground] = React.useState('');
@@ -79,6 +80,7 @@ export default function PersonFormScreen({ navigation }: any) {
       setWorkRole(person.workRole ?? '');
       setRelationship(person.relationship ?? '');
       setBirthDate(person.birthDate ? toYmd(person.birthDate) : '');
+      setAnniversaryDate(person.anniversaryDate ? toYmd(person.anniversaryDate) : '');
       setInterests(Array.isArray(person.interests) ? person.interests : []);
       setTags(Array.isArray(person.tags) ? person.tags : []);
       setBackground(person.background ?? '');
@@ -108,6 +110,7 @@ export default function PersonFormScreen({ navigation }: any) {
       workRole,
       relationship,
       birthDate,
+      anniversaryDate,
       interests,
       tags,
       background,
@@ -266,6 +269,7 @@ export default function PersonFormScreen({ navigation }: any) {
         <SectionLabel>Personal</SectionLabel>
         <FieldGroup>
           <DateInput label="Birthday" value={birthDate} onChange={(v) => setBirthDate(v)} />
+          <DateInput label="Anniversary" value={anniversaryDate} onChange={(v) => setAnniversaryDate(v)} />
           <ChipInput label="Interests" values={interests} onChange={setInterests} />
         </FieldGroup>
 

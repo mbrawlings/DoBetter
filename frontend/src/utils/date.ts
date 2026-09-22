@@ -19,6 +19,48 @@ export function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
+export function ordinal(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+}
+
+// Years elapsed from a "YYYY-MM-DD" date to `year`. Null when the stored year is
+// missing or implausible (contact imports use placeholder years like 1604).
+export function yearsSince(value: string | null | undefined, year: number): number | null {
+  if (!value) return null;
+  const start = Number(value.split('T')[0].split('-')[0]);
+  if (!start) return null;
+  const n = year - start;
+  return n >= 1 && n <= 120 ? n : null;
+}
+
+export function birthdayTitle(name: string, value: string | null | undefined, year: number): string {
+  const n = yearsSince(value, year);
+  return n ? `${name}'s ${ordinal(n)} Birthday` : `${name}'s Birthday`;
+}
+
+// Spouse anniversaries are the user's own ("with"); anyone else's are theirs.
+export function anniversaryTitle(
+  name: string,
+  value: string | null | undefined,
+  year: number,
+  relationship?: string | null,
+): string {
+  const n = yearsSince(value, year);
+  const count = n ? `${ordinal(n)} ` : '';
+  return relationship === 'spouse' ? `${count}Anniversary with ${name}` : `${name}'s ${count}Anniversary`;
+}
+
 function toYmd(value: string): string {
   return value.split('T')[0];
 }
