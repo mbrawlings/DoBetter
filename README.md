@@ -183,18 +183,17 @@ npm run lint:backend
 
 ## 🚀 Deployment
 
-### Frontend Deployment
-The frontend can be deployed using Expo's build services:
+Production is split across three places. API secrets stay on the Oracle machine. They do not go in Cloudflare.
 
-```bash
-cd DoBetter/frontend
-expo build:android  # Build for Android
-expo build:ios      # Build for iOS
-expo build:web      # Build for web
-```
+| Piece | Where it runs | Address |
+|-------|----------------|---------|
+| Website and domain | Cloudflare (pages and DNS) | https://appdobetter.com |
+| API | Oracle Cloud VM named `dobetter` (`141.148.148.131`) | https://api.appdobetter.com/graphql |
+| Database | MongoDB | connection vars on the API host |
 
-### Backend Deployment
-Backend deployment instructions will be added once the backend is implemented.
+The API is a systemd service on that VM. It runs as `ubuntu`, with working directory `/home/ubuntu/DoBetter/backend` and start command `/usr/bin/node server.mjs`. Caddy terminates TLS in front of Express. The phone app calls this API; the local `backend/.env` on a laptop is for development only.
+
+Production environment variables are in `/etc/dobetter.env` on the VM (the systemd unit's `EnvironmentFile`). That file holds `JWT_SECRET`, the Mongo connection, Resend, and the web-push `VAPID_*` values. After changing it, restart the API service. Do not commit that file or paste it into chat.
 
 ## 🤝 Contributing
 
