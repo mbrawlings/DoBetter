@@ -10,6 +10,11 @@ import {
   normalizeEmail,
 } from '../../utils/authHelpers.js';
 import { sendVerificationEmail } from '../../utils/email.js';
+import {
+  normalizeNotificationSettings,
+  normalizePushSubscription,
+  webPushPublicKey as webPushPublicKeyFromEnv,
+} from '../../utils/reminders.js';
 
 const Query = {
   async me(_, __, { orgId }) {
@@ -18,7 +23,17 @@ const Query = {
     }
     return User.findById(orgId).lean();
   },
+  webPushPublicKey() {
+    return webPushPublicKeyFromEnv();
+  },
 };
+
+async function requireUser(orgId) {
+  if (!orgId) throw new Error('Unauthorized');
+  const user = await User.findById(orgId);
+  if (!user) throw new Error('Unauthorized');
+  return user;
+}
 
 const Mutation = {
   async login(_, { email, password }) {
@@ -124,6 +139,41 @@ const Mutation = {
       throw new Error('Current password is incorrect');
     }
     user.password = newPassword;
+    await user.save();
+    return true;
+  },
+
+  async saveWebPushSubscription(_, { subscription, settings }, { orgId }) {
+    const user = await requireUser(orgId);
+    const nextSub = normalizePushSubscription(subscription);
+    const prefs = normalizeNotificationSettings(settings);
+    const existing = user.pushSubscriptions.findIndex((sub) => sub.endpoint === nextSub.endpoint);
+    if (existing >= 0) {
+      user.pushSubscriptions[existing].p256dh = nextSub.p256dh;
+      user.pushSubscriptions[existing].auth = nextSub.auth;
+    } else {
+      user.pushSubscriptions.push(nextSub);
+    }
+    user.notificationPrefs = prefs;
+    user.markModified('notificationPrefs');
+    user.markModified('pushSubscriptions');
+    await user.save();
+    return true;
+  },
+
+  async removeWebPushSubscription(_, { endpoint }, { orgId }) {
+    const user = await requireUser(orgId);
+    const target = typeof endpoint === 'string' ? endpoint : '';
+    user.pushSubscriptions = user.pushSubscriptions.filter((sub) => sub.endpoint !== target);
+    user.markModified('pushSubscriptions');
+    await user.save();
+    return true;
+  },
+
+  async updateNotificationSettings(_, { settings }, { orgId }) {
+    const user = await requireUser(orgId);
+    user.notificationPrefs = normalizeNotificationSettings(settings);
+    user.markModified('notificationPrefs');
     await user.save();
     return true;
   },

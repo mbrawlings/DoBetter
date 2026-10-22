@@ -70,6 +70,33 @@ export const ME_QUERY = gql`
   }
 `;
 
+export const WEB_PUSH_PUBLIC_KEY_QUERY = gql`
+  query WebPushPublicKey {
+    webPushPublicKey
+  }
+`;
+
+export const SAVE_WEB_PUSH_SUBSCRIPTION = gql`
+  mutation SaveWebPushSubscription(
+    $subscription: PushSubscriptionInput!
+    $settings: NotificationSettingsInput!
+  ) {
+    saveWebPushSubscription(subscription: $subscription, settings: $settings)
+  }
+`;
+
+export const REMOVE_WEB_PUSH_SUBSCRIPTION = gql`
+  mutation RemoveWebPushSubscription($endpoint: String!) {
+    removeWebPushSubscription(endpoint: $endpoint)
+  }
+`;
+
+export const UPDATE_NOTIFICATION_SETTINGS = gql`
+  mutation UpdateNotificationSettings($settings: NotificationSettingsInput!) {
+    updateNotificationSettings(settings: $settings)
+  }
+`;
+
 export const PERSONS_QUERY = gql`
   query Persons($filter: PersonFilterInput) {
     persons(filter: $filter) {

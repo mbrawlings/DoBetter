@@ -2,12 +2,28 @@ import * as React from 'react';
 import { Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import * as Notifications from 'expo-notifications';
-import { BackButton, FieldRow, NavBar, SectionLabel } from '../components/ui';
+import { useMutation, useQuery } from '@apollo/client';
+import { BackButton, FieldRow, NavBar } from '../components/ui';
 import SortSheet, { SortOption } from '../components/modals/SortSheet';
 import TimeInput, { formatHumanTime } from '../components/inputs/TimeInput';
 import { useNotificationPrefs } from '../notifications/useNotificationPrefs';
 import { ensurePermission } from '../notifications/scheduler';
-import type { LeadDays } from '../notifications/notificationPrefs';
+import type { LeadDays, NotificationPrefs } from '../notifications/notificationPrefs';
+import {
+  isIosDevice,
+  isStandaloneDisplay,
+  requestWebPushPermission,
+  subscribeWebPush,
+  toNotificationSettings,
+  unsubscribeWebPush,
+  webPushSupported,
+} from '../notifications/webPush';
+import {
+  REMOVE_WEB_PUSH_SUBSCRIPTION,
+  SAVE_WEB_PUSH_SUBSCRIPTION,
+  UPDATE_NOTIFICATION_SETTINGS,
+  WEB_PUSH_PUBLIC_KEY_QUERY,
+} from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
 
 const LEAD_OPTIONS: SortOption<string>[] = [
@@ -33,12 +49,28 @@ type PermissionState = 'unknown' | 'granted' | 'denied';
 export default function NotificationsScreen({ navigation }: any) {
   const { prefs, loaded, update } = useNotificationPrefs();
   const isWeb = Platform.OS === 'web';
+  const webBlocked = isWeb && isIosDevice() && !isStandaloneDisplay();
+  const webReady = isWeb && webPushSupported() && !webBlocked;
+
+  const { data: pushKeyData, loading: pushKeyLoading } = useQuery(WEB_PUSH_PUBLIC_KEY_QUERY, {
+    skip: !isWeb,
+  });
+  const publicKey = (pushKeyData?.webPushPublicKey as string | null | undefined) ?? null;
+  const [saveSubscription] = useMutation(SAVE_WEB_PUSH_SUBSCRIPTION);
+  const [removeSubscription] = useMutation(REMOVE_WEB_PUSH_SUBSCRIPTION);
+  const [updateSettings] = useMutation(UPDATE_NOTIFICATION_SETTINGS);
 
   const [leadSheetVisible, setLeadSheetVisible] = React.useState(false);
   const [permission, setPermission] = React.useState<PermissionState>('unknown');
+  const [saveError, setSaveError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (isWeb) return;
+    if (isWeb) {
+      if (typeof Notification === 'undefined') return;
+      if (Notification.permission === 'granted') setPermission('granted');
+      else if (Notification.permission === 'denied') setPermission('denied');
+      return;
+    }
     let active = true;
     Notifications.getPermissionsAsync().then((res) => {
       if (active) setPermission(res.granted ? 'granted' : 'denied');
@@ -48,8 +80,54 @@ export default function NotificationsScreen({ navigation }: any) {
     };
   }, [isWeb]);
 
+  async function persistSettings(next: NotificationPrefs) {
+    await update(next);
+    if (!isWeb) return;
+    await updateSettings({ variables: { settings: toNotificationSettings(next) } });
+  }
+
   async function handleToggle(next: boolean) {
-    if (next && !isWeb) {
+    setSaveError(null);
+    if (isWeb) {
+      if (!next) {
+        const endpoint = await unsubscribeWebPush();
+        await update({ ...prefs, enabled: false });
+        try {
+          await updateSettings({
+            variables: { settings: toNotificationSettings({ ...prefs, enabled: false }) },
+          });
+          if (endpoint) await removeSubscription({ variables: { endpoint } });
+        } catch {
+          setSaveError('Could not turn off reminders. Try again.');
+        }
+        return;
+      }
+
+      const permissionResult = await requestWebPushPermission();
+      setPermission(permissionResult === 'granted' ? 'granted' : 'denied');
+      if (permissionResult !== 'granted' || !publicKey) return;
+
+      const subscription = await subscribeWebPush(publicKey);
+      if (!subscription) {
+        setSaveError('Could not turn on reminders. Try again.');
+        return;
+      }
+
+      const nextPrefs = { ...prefs, enabled: true };
+      await update(nextPrefs);
+      try {
+        await saveSubscription({
+          variables: { subscription, settings: toNotificationSettings(nextPrefs) },
+        });
+      } catch {
+        await update({ ...prefs, enabled: false });
+        await unsubscribeWebPush();
+        setSaveError('Could not turn on reminders. Try again.');
+      }
+      return;
+    }
+
+    if (next) {
       const granted = await ensurePermission();
       setPermission(granted ? 'granted' : 'denied');
     }
@@ -58,18 +136,30 @@ export default function NotificationsScreen({ navigation }: any) {
 
   async function handleLeadSelect(value: string) {
     setLeadSheetVisible(false);
-    await update({ ...prefs, leadDays: Number(value) as LeadDays });
+    setSaveError(null);
+    try {
+      await persistSettings({ ...prefs, leadDays: Number(value) as LeadDays });
+    } catch {
+      setSaveError('Could not save reminder settings. Try again.');
+    }
   }
 
   async function handleTimeChange(value: string) {
     const [hh, mm] = value.split(':').map(Number);
     if (!Number.isFinite(hh) || !Number.isFinite(mm)) return;
-    await update({ ...prefs, hour: hh, minute: mm });
+    setSaveError(null);
+    try {
+      await persistSettings({ ...prefs, hour: hh, minute: mm });
+    } catch {
+      setSaveError('Could not save reminder settings. Try again.');
+    }
   }
 
   const timeValue = `${pad(prefs.hour)}:${pad(prefs.minute)}`;
-  const showControls = prefs.enabled && !isWeb;
-  const showPermissionWarning = prefs.enabled && !isWeb && permission === 'denied';
+  const showControls = prefs.enabled && !webBlocked;
+  const showPermissionWarning = !webBlocked && permission === 'denied' && (isWeb || prefs.enabled);
+  const switchDisabled =
+    !loaded || webBlocked || (isWeb && (!webReady || pushKeyLoading || !publicKey));
 
   return (
     <View style={styles.screen}>
@@ -87,7 +177,7 @@ export default function NotificationsScreen({ navigation }: any) {
             <Switch
               value={prefs.enabled}
               onValueChange={handleToggle}
-              disabled={!loaded || isWeb}
+              disabled={switchDisabled}
               trackColor={{ true: colorsLight.primary, false: colorsLight.borderStrong }}
               thumbColor={colorsLight.surface}
             />
@@ -117,14 +207,32 @@ export default function NotificationsScreen({ navigation }: any) {
           <View style={styles.warning}>
             <Icon source="alert-circle-outline" size={20} color={colorsLight.danger} />
             <Text style={styles.warningText}>
-              Notifications are turned off for DoBetter. Enable them in your device settings to
-              receive reminders.
+              {isWeb
+                ? 'Notifications are turned off for DoBetter. Enable them in your browser settings to receive reminders.'
+                : 'Notifications are turned off for DoBetter. Enable them in your device settings to receive reminders.'}
             </Text>
           </View>
         ) : null}
 
-        {isWeb ? (
-          <Text style={styles.hint}>Reminders are available on the iOS and Android apps.</Text>
+        {webBlocked ? (
+          <Text style={styles.hint}>
+            Add DoBetter to your Home Screen, then open it from the icon to turn on reminders.
+          </Text>
+        ) : null}
+
+        {isWeb && !webBlocked && !webPushSupported() ? (
+          <Text style={styles.hint}>Reminders need a browser that supports notifications.</Text>
+        ) : null}
+
+        {webReady && !pushKeyLoading && !publicKey ? (
+          <Text style={styles.hint}>Reminders are not available right now.</Text>
+        ) : null}
+
+        {saveError ? (
+          <View style={styles.warning}>
+            <Icon source="alert-circle-outline" size={20} color={colorsLight.danger} />
+            <Text style={styles.warningText}>{saveError}</Text>
+          </View>
         ) : null}
       </ScrollView>
 

@@ -9,6 +9,8 @@ import dotenv from 'dotenv';
 import typeDefs from './schemas/typeDefs.js';
 import resolvers from './schemas/resolvers.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { dispatchReminders, startReminderDispatcher } from './utils/dispatchReminders.js';
 
 dotenv.config();
 
@@ -91,5 +93,29 @@ app.use(
   })
 );
 
+function secretsMatch(provided, expected) {
+  const a = crypto.createHash('sha256').update(String(provided)).digest();
+  const b = crypto.createHash('sha256').update(String(expected)).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+app.post('/internal/dispatch-reminders', async (req, res) => {
+  const secret = process.env.DISPATCH_SECRET;
+  const provided = req.get('x-dispatch-secret') || '';
+  if (!secret || !secretsMatch(provided, secret)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const result = await dispatchReminders();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('reminder dispatch failed', err);
+    return res.status(500).json({ error: 'Dispatch failed' });
+  }
+});
+
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 GraphQL on http://localhost:${PORT}/graphql`));
+app.listen(PORT, () => {
+  console.log(`🚀 GraphQL on http://localhost:${PORT}/graphql`);
+  startReminderDispatcher();
+});

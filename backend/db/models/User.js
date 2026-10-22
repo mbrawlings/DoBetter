@@ -32,9 +32,28 @@ const users = new Schema(
       type: Date,
       default: null,
     },
+    notificationPrefs: {
+      enabled: { type: Boolean, default: false },
+      leadDays: { type: Number, default: 1 },
+      hour: { type: Number, default: 9 },
+      minute: { type: Number, default: 0 },
+      timeZone: { type: String, default: 'UTC' },
+    },
+    pushSubscriptions: {
+      type: [
+        {
+          endpoint: { type: String, required: true },
+          p256dh: { type: String, required: true },
+          auth: { type: String, required: true },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );
+
+users.index({ 'notificationPrefs.enabled': 1 });
 
 const bcryptRegex = /^\$2[ayb]\$.{56}$/;
 
