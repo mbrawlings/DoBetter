@@ -55,10 +55,38 @@ export default function DateInput({ label, value, onChange, required, placeholde
   }
 
   const display = formatHumanDate(value);
+  const canClear = Boolean(value);
 
-  // On web the transparent <input type="date"> overlay already provides a native
-  // clear affordance, so only add an explicit clear button on native platforms.
-  const canClear = Boolean(value) && Platform.OS !== 'web';
+  // Phone web: a plain X with a 44px target. Negative margin keeps the row the
+  // same height as neighboring fields (FieldRow's vertical padding is 12).
+  const clearButton = (
+    <Pressable
+      onPress={clear}
+      hitSlop={Platform.OS === 'web' ? undefined : 10}
+      accessibilityRole="button"
+      accessibilityLabel={`Clear ${label}`}
+      style={
+        Platform.OS === 'web'
+          ? {
+              width: 44,
+              height: 44,
+              marginVertical: -12,
+              marginRight: -12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              zIndex: 2,
+            }
+          : undefined
+      }
+    >
+      <Icon
+        source={Platform.OS === 'web' ? 'close' : 'close-circle'}
+        size={Platform.OS === 'web' ? 20 : 18}
+        color={colorsLight.textFaint}
+      />
+    </Pressable>
+  );
 
   const row = (
     <FieldRow
@@ -70,26 +98,24 @@ export default function DateInput({ label, value, onChange, required, placeholde
       onPress={Platform.OS === 'web' ? undefined : openPicker}
       rightSlot={
         canClear ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Pressable
-              onPress={clear}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`Clear ${label}`}
-            >
-              <Icon source="close-circle" size={18} color={colorsLight.textFaint} />
-            </Pressable>
-            <Icon source="chevron-down" size={16} color={colorsLight.textFaint} />
-          </View>
+          Platform.OS === 'web' ? (
+            clearButton
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {clearButton}
+              <Icon source="chevron-down" size={16} color={colorsLight.textFaint} />
+            </View>
+          )
         ) : undefined
       }
     />
   );
 
   if (Platform.OS === 'web') {
-    // Overlay a real, full-size, transparent date input so the user's tap lands
-    // directly on it. iOS Safari only opens the native picker from a genuine tap
-    // on the input itself (programmatic .click()/showPicker() do not work there).
+    // Overlay a transparent date input so the tap lands on it. iOS Safari only
+    // opens the native picker from a genuine tap on the input itself
+    // (programmatic .click()/showPicker() do not work there). When a date is
+    // set, the overlay stops before the clear button.
     return (
       <View style={{ position: 'relative' }}>
         {row}
@@ -111,15 +137,19 @@ export default function DateInput({ label, value, onChange, required, placeholde
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
+            // Stop short of the clear control so that tap clears the date
+            // instead of opening the picker. The control occupies the right
+            // padding plus a 44px target.
+            right: canClear ? 52 : 0,
             bottom: 0,
-            width: '100%',
+            width: canClear ? 'auto' : '100%',
             height: '100%',
             margin: 0,
             padding: 0,
             border: 'none',
             opacity: 0,
             cursor: 'pointer',
+            zIndex: 1,
           }}
         />
       </View>
