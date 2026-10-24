@@ -217,4 +217,62 @@ export const DELETE_INTERACTION_MUTATION = gql`
   mutation DeleteInteraction($id: ID!) { deleteInteraction(id: $id) }
 `;
 
+export const ASSETS_QUERY = gql`
+  query Assets {
+    assets {
+      id
+      name
+      realm
+      parentId
+      note
+      favorite
+    }
+  }
+`;
+
+export const ASSET_QUERY = gql`
+  query Asset($id: ID!) {
+    asset(id: $id) {
+      id
+      name
+      realm
+      parentId
+      note
+      favorite
+    }
+  }
+`;
+
+export const CREATE_ASSET_MUTATION = gql`
+  mutation CreateAsset($input: AssetInput!) {
+    createAsset(input: $input) {
+      id
+      name
+      realm
+      parentId
+      note
+      favorite
+    }
+  }
+`;
+
+export const UPDATE_ASSET_MUTATION = gql`
+  mutation UpdateAsset($id: ID!, $input: AssetUpdateInput!) {
+    updateAsset(id: $id, input: $input) {
+      id
+      name
+      realm
+      parentId
+      note
+      favorite
+    }
+  }
+`;
+
+export const DELETE_ASSET_MUTATION = gql`
+  mutation DeleteAsset($id: ID!) {
+    deleteAsset(id: $id)
+  }
+`;
+
 

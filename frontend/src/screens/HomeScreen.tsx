@@ -24,6 +24,7 @@ import {
 } from '../components/ui';
 import SelectSheet from '../components/modals/SelectSheet';
 import SortSheet, { PEOPLE_SORT_OPTIONS, SortBy } from '../components/modals/SortSheet';
+import ModeSwitch, { AppMode } from '../components/ModeSwitch';
 import { usePersistedState } from '../hooks/usePersistedState';
 import { getPref, setPref } from '../providers/prefsStorage';
 
@@ -115,7 +116,7 @@ function passesTagFilter(p: Person, tag: string): boolean {
   return (p.tags ?? []).includes(tag);
 }
 
-export default function HomeScreen() {
+export default function HomeScreen({ onModeChange }: { onModeChange: (mode: AppMode) => void }) {
   const { data, loading, error, refetch } = useQuery(PERSONS_QUERY, {
     variables: { filter: null },
     fetchPolicy: 'cache-and-network',
@@ -209,6 +210,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.screen}>
         {Header}
+        <ModeSwitch value="people" onChange={onModeChange} />
         <View style={[styles.center, { padding: 16 }]}>
           <Icon source="alert-circle-outline" size={48} color={colorsLight.danger} />
           <Text style={styles.errorTitle}>Something went wrong</Text>
@@ -234,6 +236,7 @@ export default function HomeScreen() {
         }
       >
         {Header}
+        <ModeSwitch value="people" onChange={onModeChange} />
 
         {!showEmpty ? (
           <>

@@ -4,6 +4,7 @@ import auth from './resolvers/auth.js';
 import person from './resolvers/person.js';
 import interaction from './resolvers/interaction.js';
 import giftIdea from './resolvers/giftIdea.js';
+import asset from './resolvers/asset.js';
 import { isEmailVerified } from '../utils/authHelpers.js';
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -75,6 +76,7 @@ const resolvers = {
       ...person.Query,
       ...interaction.Query,
       ...giftIdea.Query,
+      ...asset.Query,
     }),
   },
   Mutation: {
@@ -83,6 +85,7 @@ const resolvers = {
       ...person.Mutation,
       ...interaction.Mutation,
       ...giftIdea.Mutation,
+      ...asset.Mutation,
     }),
   },
   User: {
@@ -102,6 +105,12 @@ const resolvers = {
     id: (parent) => (parent.id ?? parent._id?.toString()),
     orgId: (parent) => (parent.orgId ? parent.orgId.toString() : null),
     personId: (parent) => (parent.personId ? parent.personId.toString() : null),
+  },
+  Asset: {
+    id: (parent) => (parent.id ?? parent._id?.toString()),
+    orgId: (parent) => (parent.orgId ? parent.orgId.toString() : null),
+    parentId: (parent) => (parent.parentId ? parent.parentId.toString() : null),
+    favorite: (parent) => Boolean(parent.favorite),
   },
 };
 
