@@ -5,6 +5,7 @@ import person from './typeDefs/person.js';
 import interaction from './typeDefs/interaction.js';
 import giftIdea from './typeDefs/giftIdea.js';
 import asset from './typeDefs/asset.js';
+import procedure from './typeDefs/procedure.js';
 
 const typeDefs = `#graphql
   ${base}
@@ -13,6 +14,7 @@ const typeDefs = `#graphql
   ${interaction}
   ${giftIdea}
   ${asset}
+  ${procedure}
 `;
 
 export default typeDefs;

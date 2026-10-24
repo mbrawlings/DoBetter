@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Asset from '../../db/models/asset.js';
+import Procedure from '../../db/models/procedure.js';
 import { buildUpdateDoc } from './_updateDoc.js';
 
 const { Types } = mongoose;
@@ -191,7 +192,9 @@ const Mutation = {
     const child = await Asset.exists({ orgId, parentId: existing._id });
     if (child) throw new Error('Move or delete its components first.');
     const res = await Asset.deleteOne({ _id: existing._id, orgId });
-    return res.deletedCount === 1;
+    if (res.deletedCount !== 1) return false;
+    await Procedure.deleteMany({ orgId, assetId: existing._id });
+    return true;
   },
 };
 

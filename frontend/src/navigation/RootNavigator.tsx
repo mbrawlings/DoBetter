@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import ModeHomeScreen from '../screens/ModeHomeScreen';
 import AssetFormScreen from '../screens/AssetFormScreen';
+import ProcedureFormScreen from '../screens/ProcedureFormScreen';
 import ImportContactsScreen from '../screens/ImportContactsScreen';
 import PersonFormScreen from '../screens/PersonFormScreen';
 import PersonHubScreen from '../screens/PersonHubScreen';
@@ -59,6 +60,7 @@ function AuthedNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorsLight.bg } }}>
       <Stack.Screen name="Home" component={ModeHomeScreen} />
       <Stack.Screen name="Asset" component={AssetFormScreen} />
+      <Stack.Screen name="Procedure" component={ProcedureFormScreen} />
       <Stack.Screen name="ImportContacts" component={ImportContactsScreen} />
       <Stack.Screen name="PersonHub" component={PersonHubScreen} />
       <Stack.Screen name="Person" component={PersonFormScreen} />

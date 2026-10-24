@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Icon, Text } from 'react-native-paper';
-import { useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client';
 import SelectInput from '../components/inputs/SelectInput';
 import ConfirmSheet from '../components/modals/ConfirmSheet';
@@ -19,6 +19,7 @@ import {
   ASSETS_QUERY,
   CREATE_ASSET_MUTATION,
   DELETE_ASSET_MUTATION,
+  PROCEDURES_QUERY,
   UPDATE_ASSET_MUTATION,
 } from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
@@ -116,6 +117,21 @@ export default function AssetFormScreen({ navigation }: any) {
   const { data: listData, loading: listLoading } = useQuery(ASSETS_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
+  const assets = React.useMemo(() => {
+    const raw: AssetFields[] = listData?.assets ?? [];
+    return raw.map(toAsset).filter((item): item is Asset => item !== null);
+  }, [listData]);
+  const procedureAssetIds = React.useMemo(() => {
+    if (!assetId) return [];
+    const ids = assets.filter((item) => item.parentId === assetId).map((item) => item.id);
+    ids.unshift(assetId);
+    return ids;
+  }, [assets, assetId]);
+  const { data: proceduresData, refetch: refetchProcedures } = useQuery(PROCEDURES_QUERY, {
+    variables: { assetIds: procedureAssetIds },
+    skip: !isEdit || procedureAssetIds.length === 0,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const client = useApolloClient();
   const [createAsset, { error: createError }] = useMutation(CREATE_ASSET_MUTATION);
@@ -123,10 +139,6 @@ export default function AssetFormScreen({ navigation }: any) {
   const [deleteAsset] = useMutation(DELETE_ASSET_MUTATION);
 
   const asset = data?.asset as AssetFields | null | undefined;
-  const assets = React.useMemo(() => {
-    const raw: AssetFields[] = listData?.assets ?? [];
-    return raw.map(toAsset).filter((item): item is Asset => item !== null);
-  }, [listData]);
 
   const [name, setName] = React.useState('');
   const [parentId, setParentId] = React.useState(isEdit ? '' : (presetParentId ?? ''));
@@ -156,6 +168,13 @@ export default function AssetFormScreen({ navigation }: any) {
     if (parent) setRealm(parent.realm);
   }, [isEdit, parentId, assets]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isEdit || procedureAssetIds.length === 0) return;
+      refetchProcedures();
+    }, [isEdit, procedureAssetIds, refetchProcedures]),
+  );
+
   const blocked = React.useMemo(() => blockedParentIds(assetId, assets), [assetId, assets]);
   const parentChoices = assets.filter((item) => !blocked.has(item.id));
   const labels = React.useMemo(() => parentLabels(parentChoices), [parentChoices]);
@@ -171,6 +190,11 @@ export default function AssetFormScreen({ navigation }: any) {
         .filter((item) => item.parentId === assetId)
         .sort((a, b) => a.name.localeCompare(b.name))
     : [];
+  const procedures: { id: string; assetId: string; title: string }[] = proceduresData?.proceduresForAssets ?? [];
+  const ownProcedures = assetId
+    ? procedures.filter((procedure) => procedure.assetId === assetId)
+    : [];
+  const isComponent = Boolean(asset?.parentId);
 
   const canSubmit = name.trim().length > 0 && !parentMissing && !submitting;
 
@@ -369,6 +393,42 @@ export default function AssetFormScreen({ navigation }: any) {
 
         {isEdit && assetId ? (
           <>
+            {isComponent || ownProcedures.length > 0 ? (
+              <>
+                <SectionLabel
+                  action={
+                    isComponent
+                      ? { label: 'Add', onPress: () => navigation.push('Procedure', { assetId }) }
+                      : undefined
+                  }
+                >
+                  Procedures
+                </SectionLabel>
+                {ownProcedures.length === 0 ? (
+                  <Text style={styles.emptyChildren}>None yet. A procedure is the how-to for this component.</Text>
+                ) : (
+                  <View style={styles.childGroup}>
+                    {ownProcedures.map((procedure, index) => {
+                      const last = index === ownProcedures.length - 1;
+                      return (
+                        <Pressable
+                          key={procedure.id}
+                          onPress={() => navigation.push('Procedure', { assetId, id: procedure.id })}
+                          style={[styles.childRow, last ? null : styles.childDivider]}
+                        >
+                          <Text style={styles.childName}>{procedure.title}</Text>
+                          <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+                {!isComponent ? (
+                  <Text style={styles.emptyChildren}>These sit on this place. Add them again on a component.</Text>
+                ) : null}
+              </>
+            ) : null}
+
             <SectionLabel
               action={{
                 label: 'Add',
@@ -378,16 +438,19 @@ export default function AssetFormScreen({ navigation }: any) {
               Components
             </SectionLabel>
             {children.length === 0 ? (
-              <Text style={styles.emptyChildren}>None yet. A component inherits this realm.</Text>
+              <Text style={styles.emptyChildren}>
+                {isComponent
+                  ? 'None yet. A component inherits this realm.'
+                  : 'Add a component, then add its procedures there.'}
+              </Text>
             ) : (
-              <View style={styles.childGroup}>
-                {children.map((child, index) => {
-                  const last = index === children.length - 1;
-                  return (
+              children.map((child) => {
+                const childProcedures = procedures.filter((procedure) => procedure.assetId === child.id);
+                return (
+                  <View key={child.id} style={styles.childGroup}>
                     <Pressable
-                      key={child.id}
                       onPress={() => navigation.push('Asset', { id: child.id })}
-                      style={[styles.childRow, last ? null : styles.childDivider]}
+                      style={[styles.childRow, styles.childDivider]}
                     >
                       <Text style={styles.childName}>{child.name}</Text>
                       {child.favorite ? (
@@ -395,9 +458,25 @@ export default function AssetFormScreen({ navigation }: any) {
                       ) : null}
                       <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
                     </Pressable>
-                  );
-                })}
-              </View>
+                    {childProcedures.map((procedure) => (
+                      <Pressable
+                        key={procedure.id}
+                        onPress={() => navigation.push('Procedure', { assetId: child.id, id: procedure.id })}
+                        style={[styles.childRow, styles.procedureRow, styles.childDivider]}
+                      >
+                        <Text style={styles.procedureName}>{procedure.title}</Text>
+                        <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
+                      </Pressable>
+                    ))}
+                    <Pressable
+                      onPress={() => navigation.push('Procedure', { assetId: child.id })}
+                      style={styles.addProcedure}
+                    >
+                      <Text style={styles.addProcedureLabel}>Add procedure</Text>
+                    </Pressable>
+                  </View>
+                );
+              })
             )}
           </>
         ) : null}
@@ -489,6 +568,7 @@ const styles = StyleSheet.create({
   },
   childGroup: {
     marginHorizontal: 16,
+    marginBottom: 12,
     backgroundColor: colorsLight.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -513,6 +593,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     color: colorsLight.text,
+    includeFontPadding: false,
+  },
+  procedureRow: {
+    paddingLeft: 28,
+  },
+  procedureName: {
+    flex: 1,
+    fontFamily: fontFamily.regular,
+    fontSize: 15,
+    color: colorsLight.text,
+    includeFontPadding: false,
+  },
+  addProcedure: {
+    paddingVertical: 12,
+    paddingLeft: 28,
+    paddingRight: 16,
+  },
+  addProcedureLabel: {
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    fontSize: 14,
+    color: colorsLight.primary,
     includeFontPadding: false,
   },
   footer: {

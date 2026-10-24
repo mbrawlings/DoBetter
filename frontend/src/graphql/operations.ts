@@ -275,4 +275,56 @@ export const DELETE_ASSET_MUTATION = gql`
   }
 `;
 
+export const PROCEDURES_QUERY = gql`
+  query Procedures($assetIds: [ID!]!) {
+    proceduresForAssets(assetIds: $assetIds) {
+      id
+      assetId
+      title
+    }
+  }
+`;
+
+export const PROCEDURE_QUERY = gql`
+  query Procedure($id: ID!) {
+    procedure(id: $id) {
+      id
+      assetId
+      title
+      steps
+      parts { name quantity }
+      tools
+      specs { label value }
+    }
+  }
+`;
+
+export const CREATE_PROCEDURE_MUTATION = gql`
+  mutation CreateProcedure($input: ProcedureInput!) {
+    createProcedure(input: $input) {
+      id
+      title
+    }
+  }
+`;
+
+export const UPDATE_PROCEDURE_MUTATION = gql`
+  mutation UpdateProcedure($id: ID!, $input: ProcedureUpdateInput!) {
+    updateProcedure(id: $id, input: $input) {
+      id
+      title
+      steps
+      parts { name quantity }
+      tools
+      specs { label value }
+    }
+  }
+`;
+
+export const DELETE_PROCEDURE_MUTATION = gql`
+  mutation DeleteProcedure($id: ID!) {
+    deleteProcedure(id: $id)
+  }
+`;
+
 
