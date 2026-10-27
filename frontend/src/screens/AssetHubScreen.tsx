@@ -4,6 +4,7 @@ import { ActivityIndicator, Icon, Text } from 'react-native-paper';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { useQuery } from '@apollo/client';
 import { formatHumanDate } from '../components/inputs/DateInput';
+import LogModal from '../components/modals/LogModal';
 import { BackButton, NavBar, NavLink, SectionLabel } from '../components/ui';
 import { ASSET_LOGS_QUERY, ASSET_QUERY, ASSETS_QUERY, PROCEDURES_QUERY } from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
@@ -58,6 +59,7 @@ function lastDoneLabel(log: LogRow | undefined): string {
 export default function AssetHubScreen({ navigation }: any) {
   const route = useRoute() as any;
   const assetId: string | undefined = route.params?.id;
+  const [logTarget, setLogTarget] = React.useState<{ procedureId: string; id?: string } | null>(null);
 
   const { data, loading, error, refetch } = useQuery(ASSET_QUERY, {
     variables: { id: assetId! },
@@ -252,7 +254,7 @@ export default function AssetHubScreen({ navigation }: any) {
                     return (
                       <Pressable
                         key={entry.id}
-                        onPress={() => navigation.push('Log', { procedureId: entry.procedureId, id: entry.id })}
+                        onPress={() => setLogTarget({ procedureId: entry.procedureId, id: entry.id })}
                         style={[styles.timelineRow, last ? null : styles.timelineDivider]}
                       >
                         <Text style={styles.day}>{dayOfMonth(entry.date)}</Text>
@@ -317,6 +319,12 @@ export default function AssetHubScreen({ navigation }: any) {
           })
         )}
       </ScrollView>
+      <LogModal
+        visible={logTarget !== null}
+        procedureId={logTarget?.procedureId ?? ''}
+        logId={logTarget?.id}
+        onDismiss={() => setLogTarget(null)}
+      />
     </View>
   );
 }

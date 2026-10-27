@@ -5,6 +5,7 @@ import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery } from '@apollo/client';
 import { formatHumanDate } from '../components/inputs/DateInput';
 import ConfirmSheet from '../components/modals/ConfirmSheet';
+import LogModal from '../components/modals/LogModal';
 import { BackButton, NavBar, NavLink, SectionLabel } from '../components/ui';
 import {
   CREATE_PROCEDURE_MUTATION,
@@ -19,6 +20,7 @@ import { MoveDirection, moveItem } from '../utils/procedure';
 
 const TITLE_MAX = 200;
 const LINE_MAX = 500;
+const LINE_HEIGHT = 22;
 
 type TextLine = { key: string; text: string };
 type PartLine = { key: string; name: string; quantity: string };
@@ -32,6 +34,24 @@ type ProcedureFields = {
   tools?: string[] | null;
   specs?: { label: string; value: string }[] | null;
 };
+
+function GrowingInput({ style, onContentSizeChange, ...props }: React.ComponentProps<typeof TextInput>) {
+  const [height, setHeight] = React.useState(LINE_HEIGHT);
+  return (
+    <TextInput
+      {...props}
+      multiline
+      scrollEnabled={false}
+      textAlignVertical="top"
+      onContentSizeChange={(event) => {
+        const next = event.nativeEvent.contentSize.height;
+        setHeight((current) => (Math.abs(current - next) > 1 ? next : current));
+        onContentSizeChange?.(event);
+      }}
+      style={[styles.growingInput, style, { height: Math.max(height, LINE_HEIGHT) }]}
+    />
+  );
+}
 
 function errorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) return error.message;
@@ -131,6 +151,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [logTarget, setLogTarget] = React.useState<{ procedureId: string; id?: string } | null>(null);
 
   React.useEffect(() => {
     if (!procedure || hydrated) return;
@@ -293,7 +314,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <SectionLabel>Job</SectionLabel>
         <View style={styles.group}>
-          <TextInput
+          <GrowingInput
             value={title}
             onChangeText={setTitle}
             placeholder="Anode"
@@ -312,7 +333,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
             {steps.map((step, index) => (
               <View key={step.key} style={[styles.line, index < steps.length - 1 ? styles.divider : null]}>
                 <Text style={styles.order}>{index + 1}</Text>
-                <TextInput
+                <GrowingInput
                   value={step.text}
                   onChangeText={(text) =>
                     setSteps((rows) => rows.map((row) => (row.key === step.key ? { ...row, text } : row)))
@@ -346,7 +367,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
           <View style={styles.group}>
             {parts.map((part, index) => (
               <View key={part.key} style={[styles.line, index < parts.length - 1 ? styles.divider : null]}>
-                <TextInput
+                <GrowingInput
                   value={part.name}
                   onChangeText={(name) =>
                     setParts((rows) => rows.map((row) => (row.key === part.key ? { ...row, name } : row)))
@@ -385,7 +406,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
           <View style={styles.group}>
             {tools.map((tool, index) => (
               <View key={tool.key} style={[styles.line, index < tools.length - 1 ? styles.divider : null]}>
-                <TextInput
+                <GrowingInput
                   value={tool.text}
                   onChangeText={(text) =>
                     setTools((rows) => rows.map((row) => (row.key === tool.key ? { ...row, text } : row)))
@@ -419,7 +440,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
           <View style={styles.group}>
             {specs.map((spec, index) => (
               <View key={spec.key} style={[styles.line, index < specs.length - 1 ? styles.divider : null]}>
-                <TextInput
+                <GrowingInput
                   value={spec.label}
                   onChangeText={(label) =>
                     setSpecs((rows) => rows.map((row) => (row.key === spec.key ? { ...row, label } : row)))
@@ -429,7 +450,7 @@ export default function ProcedureFormScreen({ navigation }: any) {
                   style={[styles.lineInput, styles.specLabel]}
                   maxLength={LINE_MAX}
                 />
-                <TextInput
+                <GrowingInput
                   value={spec.value}
                   onChangeText={(value) =>
                     setSpecs((rows) => rows.map((row) => (row.key === spec.key ? { ...row, value } : row)))
@@ -454,14 +475,14 @@ export default function ProcedureFormScreen({ navigation }: any) {
         {isEdit && procedureId ? (
           <>
             <SectionLabel
-              action={{ label: 'Add', onPress: () => navigation.push('Log', { procedureId }) }}
+              action={{ label: 'Add', onPress: () => setLogTarget({ procedureId }) }}
             >
               Last done
             </SectionLabel>
             {procedureLogs[0] ? (
               <View style={styles.group}>
                 <Pressable
-                  onPress={() => navigation.push('Log', { procedureId, id: procedureLogs[0].id })}
+                  onPress={() => setLogTarget({ procedureId, id: procedureLogs[0].id })}
                   style={styles.logRow}
                 >
                   <Text style={styles.logLabel}>
@@ -503,6 +524,13 @@ export default function ProcedureFormScreen({ navigation }: any) {
           <Text style={styles.tipText}>This is the how-to for one job. Saving replaces this document.</Text>
         )}
       </ScrollView>
+
+      <LogModal
+        visible={logTarget !== null}
+        procedureId={logTarget?.procedureId ?? ''}
+        logId={logTarget?.id}
+        onDismiss={() => setLogTarget(null)}
+      />
 
       <ConfirmSheet
         visible={confirmVisible}
@@ -563,19 +591,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   titleInput: {
-    fontFamily: fontFamily.regular,
     fontSize: 16,
     color: colorsLight.text,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    marginVertical: 14,
+    marginHorizontal: 16,
   },
   line: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
     paddingLeft: 12,
     paddingRight: 8,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   divider: {
     borderBottomWidth: 1,
@@ -586,15 +613,22 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.medium,
     fontWeight: '500',
     fontSize: 13,
+    lineHeight: LINE_HEIGHT,
     color: colorsLight.textMuted,
     textAlign: 'right',
   },
-  lineInput: {
-    flex: 1,
+  growingInput: {
     fontFamily: fontFamily.regular,
     fontSize: 16,
+    lineHeight: LINE_HEIGHT,
     color: colorsLight.text,
-    paddingVertical: 6,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    margin: 0,
+    includeFontPadding: false,
+  },
+  lineInput: {
+    flex: 1,
     minWidth: 0,
   },
   partName: {
@@ -602,10 +636,13 @@ const styles = StyleSheet.create({
   },
   quantityInput: {
     width: 72,
+    height: LINE_HEIGHT,
     fontFamily: fontFamily.regular,
     fontSize: 16,
+    lineHeight: LINE_HEIGHT,
     color: colorsLight.text,
-    paddingVertical: 6,
+    paddingVertical: 0,
+    includeFontPadding: false,
   },
   specLabel: {
     flex: 1,
@@ -633,6 +670,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: LINE_HEIGHT,
     gap: 2,
   },
   footer: {

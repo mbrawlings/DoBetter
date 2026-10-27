@@ -5,7 +5,6 @@ import { ActivityIndicator, View } from 'react-native';
 import ModeHomeScreen from '../screens/ModeHomeScreen';
 import AssetFormScreen from '../screens/AssetFormScreen';
 import AssetHubScreen from '../screens/AssetHubScreen';
-import LogFormScreen from '../screens/LogFormScreen';
 import ProcedureFormScreen from '../screens/ProcedureFormScreen';
 import ImportContactsScreen from '../screens/ImportContactsScreen';
 import PersonFormScreen from '../screens/PersonFormScreen';
@@ -64,7 +63,6 @@ function AuthedNavigator() {
       <Stack.Screen name="AssetHub" component={AssetHubScreen} />
       <Stack.Screen name="Asset" component={AssetFormScreen} />
       <Stack.Screen name="Procedure" component={ProcedureFormScreen} />
-      <Stack.Screen name="Log" component={LogFormScreen} />
       <Stack.Screen name="ImportContacts" component={ImportContactsScreen} />
       <Stack.Screen name="PersonHub" component={PersonHubScreen} />
       <Stack.Screen name="Person" component={PersonFormScreen} />

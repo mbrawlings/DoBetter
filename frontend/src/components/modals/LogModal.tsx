@@ -1,22 +1,24 @@
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
-import { useRoute } from '@react-navigation/native';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client';
-import DateInput from '../components/inputs/DateInput';
-import SelectInput from '../components/inputs/SelectInput';
-import ConfirmSheet from '../components/modals/ConfirmSheet';
-import { BackButton, FieldGroup, FieldRow, NavBar, NavLink, SectionLabel } from '../components/ui';
+import DateInput from '../inputs/DateInput';
+import SelectInput from '../inputs/SelectInput';
+import ConfirmSheet from './ConfirmSheet';
+import FormModal from './FormModal';
+import FieldGroup from '../ui/FieldGroup';
+import FieldRow from '../ui/FieldRow';
+import SectionLabel from '../ui/SectionLabel';
 import {
   CREATE_LOG_MUTATION,
   DELETE_LOG_MUTATION,
   LOG_QUERY,
   PROCEDURE_QUERY,
   UPDATE_LOG_MUTATION,
-} from '../graphql/operations';
-import { colorsLight, fontFamily, radius } from '../theme/theme';
-import { formatDateYmd } from '../utils/date';
-import { MeterUnit, isMeterUnit } from '../utils/log';
+} from '../../graphql/operations';
+import { colorsLight, fontFamily, radius } from '../../theme/theme';
+import { formatDateYmd } from '../../utils/date';
+import { MeterUnit, isMeterUnit } from '../../utils/log';
 
 const READING_CHOICES = ['None', 'Miles', 'Hours'] as const;
 type ReadingChoice = (typeof READING_CHOICES)[number];
@@ -40,6 +42,13 @@ type LogFields = RecordedSource & {
   cost?: number | null;
   note?: string | null;
   meter?: { unit: string; value: number } | null;
+};
+
+type Props = {
+  visible: boolean;
+  procedureId: string;
+  logId?: string;
+  onDismiss: () => void;
 };
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -79,6 +88,16 @@ function parseAmount(raw: string, decimals: 2 | 3): { ok: true; value: number | 
   const value = Number(trimmed);
   if (!Number.isFinite(value)) return { ok: false };
   return { ok: true, value };
+}
+
+function emptyDraft() {
+  return {
+    date: formatDateYmd(new Date()),
+    cost: '',
+    note: '',
+    reading: 'None' as ReadingChoice,
+    readingValue: '',
+  };
 }
 
 function Recorded({ source }: { source: RecordedSource }) {
@@ -123,15 +142,13 @@ function Recorded({ source }: { source: RecordedSource }) {
   );
 }
 
-export default function LogFormScreen({ navigation }: any) {
-  const route = useRoute() as any;
-  const procedureId: string | undefined = route.params?.procedureId;
-  const logId: string | undefined = route.params?.id;
+export default function LogModal({ visible, procedureId, logId, onDismiss }: Props) {
   const isEdit = Boolean(logId);
+  const openedKey = visible ? `${logId ?? ''}:${procedureId}` : '';
 
   const { data, loading, error } = useQuery(LOG_QUERY, {
     variables: { id: logId! },
-    skip: !isEdit,
+    skip: !visible || !isEdit,
     fetchPolicy: 'cache-and-network',
   });
   const log = data?.log as LogFields | null | undefined;
@@ -141,8 +158,8 @@ export default function LogFormScreen({ navigation }: any) {
     loading: procedureLoading,
     error: procedureError,
   } = useQuery(PROCEDURE_QUERY, {
-    variables: { id: procedureId! },
-    skip: isEdit || !procedureId,
+    variables: { id: procedureId },
+    skip: !visible || isEdit || !procedureId,
     fetchPolicy: 'cache-and-network',
   });
   const procedure = procedureData?.procedure as RecordedSource | null | undefined;
@@ -158,14 +175,32 @@ export default function LogFormScreen({ navigation }: any) {
   const [reading, setReading] = React.useState<ReadingChoice>('None');
   const [readingValue, setReadingValue] = React.useState('');
   const [hydrated, setHydrated] = React.useState(!isEdit);
-  const [submitting, setSubmitting] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [openedKeySeen, setOpenedKeySeen] = React.useState(openedKey);
+
+  if (openedKeySeen !== openedKey) {
+    const draft = emptyDraft();
+    setOpenedKeySeen(openedKey);
+    setFormError(null);
+    setDeleteError(null);
+    setConfirmVisible(false);
+    if (logId) {
+      setHydrated(false);
+    } else {
+      setHydrated(true);
+      setDate(draft.date);
+      setCost(draft.cost);
+      setNote(draft.note);
+      setReading(draft.reading);
+      setReadingValue(draft.readingValue);
+    }
+  }
 
   React.useEffect(() => {
-    if (!log || hydrated) return;
+    if (!visible || !logId || hydrated || !log || log.id !== logId) return;
     setDate(log.date || formatDateYmd(new Date()));
     setCost(log.cost == null ? '' : String(log.cost));
     setNote(log.note ?? '');
@@ -177,15 +212,14 @@ export default function LogFormScreen({ navigation }: any) {
       setReadingValue('');
     }
     setHydrated(true);
-  }, [log, hydrated]);
+  }, [visible, logId, hydrated, log]);
 
-  const recorded = isEdit ? log : procedure;
+  const recorded = isEdit ? (hydrated ? log : undefined) : procedure;
   const meterChosen = reading !== 'None';
   const canSubmit =
     date.trim().length > 0 &&
     (!meterChosen || readingValue.trim().length > 0) &&
-    !submitting &&
-    (isEdit || Boolean(procedure));
+    (isEdit ? Boolean(log) && hydrated : Boolean(procedure));
 
   function onPickReading(value: string) {
     if (!isReadingChoice(value) || value === 'None') {
@@ -197,22 +231,25 @@ export default function LogFormScreen({ navigation }: any) {
   }
 
   async function onSave() {
-    if (!canSubmit) return;
+    if (!canSubmit) throw new Error('Log is not ready to save.');
     if (!date.trim()) {
-      setFormError('A date is required.');
-      return;
+      const message = 'A date is required.';
+      setFormError(message);
+      throw new Error(message);
     }
     const parsedCost = parseAmount(cost, 2);
     if (!parsedCost.ok) {
-      setFormError('Cost must be a dollar amount.');
-      return;
+      const message = 'Cost must be a dollar amount.';
+      setFormError(message);
+      throw new Error(message);
     }
     let meter: { unit: MeterUnit; value: number } | null = null;
     if (meterChosen) {
       const parsedReading = parseAmount(readingValue, 3);
       if (!parsedReading.ok || parsedReading.value == null) {
-        setFormError(reading === 'Miles' ? 'Enter the miles.' : 'Enter the hours.');
-        return;
+        const message = reading === 'Miles' ? 'Enter the miles.' : 'Enter the hours.';
+        setFormError(message);
+        throw new Error(message);
       }
       meter = { unit: reading === 'Miles' ? 'miles' : 'hours', value: parsedReading.value };
     }
@@ -223,7 +260,6 @@ export default function LogFormScreen({ navigation }: any) {
       meter,
     };
     setFormError(null);
-    setSubmitting(true);
     try {
       if (isEdit) {
         await updateLog({
@@ -236,10 +272,11 @@ export default function LogFormScreen({ navigation }: any) {
           refetchQueries: ['ProcedureLogs', 'AssetLogs'],
         });
       }
-      navigation.goBack();
-    } finally {
-      setSubmitting(false);
+    } catch (e) {
+      setFormError(errorMessage(e, 'Failed to save log'));
+      throw e;
     }
+    onDismiss();
   }
 
   async function onConfirmDelete() {
@@ -255,7 +292,7 @@ export default function LogFormScreen({ navigation }: any) {
       client.cache.evict({ id: client.cache.identify({ __typename: 'Log', id: logId }) });
       client.cache.gc();
       setConfirmVisible(false);
-      navigation.goBack();
+      onDismiss();
     } catch (e) {
       setConfirmVisible(false);
       setDeleteError(errorMessage(e, 'Failed to delete log'));
@@ -264,83 +301,34 @@ export default function LogFormScreen({ navigation }: any) {
     }
   }
 
-  if (!isEdit && !procedureId) {
-    return (
-      <View style={styles.screen}>
-        <NavBar title="Log" leading={<BackButton onPress={() => navigation.goBack()} />} />
-        <View style={[styles.center, { padding: 16 }]}>
-          <Text style={styles.errorTitle}>This log needs a procedure.</Text>
-        </View>
-      </View>
-    );
-  }
-
   const loadError = isEdit ? error : procedureError;
-  if (loadError) {
-    return (
-      <View style={styles.screen}>
-        <NavBar title="Log" leading={<BackButton onPress={() => navigation.goBack()} />} />
-        <View style={[styles.center, { padding: 16 }]}>
-          <Text style={styles.errorTitle}>{isEdit ? 'Failed to load log' : 'Failed to load procedure'}</Text>
-          <Text style={styles.muted}>{String((loadError as any).message)}</Text>
-        </View>
-      </View>
-    );
-  }
-
   const waiting = isEdit ? !hydrated : procedureLoading && !procedure;
-  if (waiting) {
-    return (
-      <View style={styles.screen}>
-        <NavBar
-          title={isEdit ? 'Log' : 'New log'}
-          leading={<BackButton onPress={() => navigation.goBack()} />}
-          trailing={<NavLink label="Save" disabled />}
-        />
-        <View style={styles.center}>
-          {isEdit && !loading && !log ? (
-            <Text style={styles.errorTitle}>Log not found</Text>
-          ) : !isEdit && !procedureLoading && !procedure ? (
-            <Text style={styles.errorTitle}>Procedure not found</Text>
-          ) : (
-            <>
-              <ActivityIndicator size="large" color={colorsLight.primary} />
-              <Text style={styles.muted}>Loading…</Text>
-            </>
-          )}
-        </View>
-      </View>
-    );
-  }
-
-  if (!recorded) {
-    return (
-      <View style={styles.screen}>
-        <NavBar title="Log" leading={<BackButton onPress={() => navigation.goBack()} />} />
-        <View style={[styles.center, { padding: 16 }]}>
-          <Text style={styles.errorTitle}>{isEdit ? 'Log not found' : 'Procedure not found'}</Text>
-        </View>
-      </View>
-    );
-  }
-
+  const missing = isEdit ? !loading && !log : !procedureLoading && !procedure;
   const saveError =
     formError ?? (createError || updateError ? errorMessage(createError ?? updateError, 'Failed to save log') : null);
 
-  return (
-    <View style={styles.screen}>
-      <NavBar
-        title={isEdit ? 'Log' : 'New log'}
-        leading={
-          isEdit ? (
-            <BackButton onPress={() => navigation.goBack()} />
-          ) : (
-            <NavLink label="Cancel" onPress={() => navigation.goBack()} />
-          )
-        }
-        trailing={<NavLink label="Save" onPress={onSave} disabled={!canSubmit} loading={submitting} bold />}
+  let body: React.ReactNode;
+  if (!isEdit && !procedureId) {
+    body = <Status title="This log needs a procedure." />;
+  } else if (loadError) {
+    body = (
+      <Status
+        title={isEdit ? 'Failed to load log' : 'Failed to load procedure'}
+        detail={errorMessage(loadError, 'Something went wrong.')}
       />
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    );
+  } else if (waiting && !missing) {
+    body = (
+      <View style={styles.status}>
+        <ActivityIndicator size="large" color={colorsLight.primary} />
+        <Text style={styles.muted}>Loading…</Text>
+      </View>
+    );
+  } else if (!recorded) {
+    body = <Status title={isEdit ? 'Log not found' : 'Procedure not found'} />;
+  } else {
+    body = (
+      <>
         <SectionLabel>Log</SectionLabel>
         <FieldGroup>
           <DateInput label="Date" value={date} onChange={(value) => setDate(value)} required />
@@ -377,26 +365,35 @@ export default function LogFormScreen({ navigation }: any) {
 
         {saveError ? <Text style={styles.errorBody}>{saveError}</Text> : null}
         {deleteError ? <Text style={styles.errorBody}>{deleteError}</Text> : null}
+        {isEdit ? null : (
+          <Text style={styles.tipText}>
+            Saving copies the procedure onto this log. A later edit leaves this copy as it was.
+          </Text>
+        )}
+      </>
+    );
+  }
 
-        {isEdit ? (
-          <View style={styles.footer}>
-            <Pressable
-              onPress={() => {
+  return (
+    <>
+      <FormModal
+        visible={visible}
+        title={isEdit ? 'Log' : 'New log'}
+        onDismiss={onDismiss}
+        onSave={onSave}
+        saveDisabled={!canSubmit}
+        onDelete={
+          isEdit && recorded
+            ? () => {
                 setDeleteError(null);
                 setConfirmVisible(true);
-              }}
-              hitSlop={6}
-              style={styles.deleteWrap}
-              disabled={submitting || deleting}
-            >
-              <Text style={styles.deleteText}>Delete log</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Text style={styles.tipText}>Saving copies the procedure onto this log. A later edit leaves this copy as it was.</Text>
-        )}
-      </ScrollView>
-
+              }
+            : undefined
+        }
+        deleteLabel="Delete log"
+      >
+        {body}
+      </FormModal>
       <ConfirmSheet
         visible={confirmVisible}
         title="Delete log?"
@@ -407,27 +404,31 @@ export default function LogFormScreen({ navigation }: any) {
         onConfirm={onConfirmDelete}
         onDismiss={() => setConfirmVisible(false)}
       />
+    </>
+  );
+}
+
+function Status({ title, detail }: { title: string; detail?: string }) {
+  return (
+    <View style={styles.status}>
+      <Text style={styles.errorTitle}>{title}</Text>
+      {detail ? <Text style={styles.muted}>{detail}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colorsLight.bg,
-  },
-  scroll: {
-    paddingBottom: 60,
-  },
-  center: {
-    flex: 1,
+  status: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 28,
   },
   muted: {
     fontFamily: fontFamily.regular,
     color: colorsLight.textMuted,
     marginTop: 12,
+    textAlign: 'center',
   },
   errorTitle: {
     fontFamily: fontFamily.semibold,
@@ -504,22 +505,6 @@ const styles = StyleSheet.create({
     color: colorsLight.text,
     paddingHorizontal: 16,
     paddingTop: 6,
-  },
-  footer: {
-    paddingTop: 32,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  deleteWrap: {
-    alignSelf: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  deleteText: {
-    fontFamily: fontFamily.medium,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colorsLight.danger,
   },
   tipText: {
     fontFamily: fontFamily.regular,
