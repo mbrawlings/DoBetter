@@ -252,22 +252,24 @@ export default function AssetHubScreen({ navigation }: any) {
                       .filter(Boolean)
                       .join(' · ');
                     return (
-                      <Pressable
-                        key={entry.id}
-                        onPress={() => setLogTarget({ procedureId: entry.procedureId, id: entry.id })}
-                        style={[styles.timelineRow, last ? null : styles.timelineDivider]}
-                      >
-                        <Text style={styles.day}>{dayOfMonth(entry.date)}</Text>
-                        <View style={styles.timelineBody}>
-                          <Text style={styles.timelineTitle}>{entry.title}</Text>
-                          {detail ? (
-                            <Text style={styles.timelineDetail} numberOfLines={2}>
-                              {detail}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
-                      </Pressable>
+                      <View key={entry.id}>
+                        <Pressable
+                          onPress={() => setLogTarget({ procedureId: entry.procedureId, id: entry.id })}
+                          style={styles.timelineRow}
+                        >
+                          <Text style={styles.day}>{dayOfMonth(entry.date)}</Text>
+                          <View style={styles.timelineBody}>
+                            <Text style={styles.timelineTitle}>{entry.title}</Text>
+                            {detail ? (
+                              <Text style={styles.timelineDetail} numberOfLines={2}>
+                                {detail}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
+                        </Pressable>
+                        {last ? null : <View style={styles.timelineDivider} />}
+                      </View>
                     );
                   })}
                 </View>
@@ -422,8 +424,8 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
   },
   timelineDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colorsLight.border,
+    height: 1,
+    backgroundColor: colorsLight.border,
     marginLeft: 52,
   },
   day: {
