@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Asset from '../../db/models/asset.js';
+import Log from '../../db/models/log.js';
 import Procedure from '../../db/models/procedure.js';
 
 const { Types } = mongoose;
@@ -82,7 +83,7 @@ function documentFromInput(input) {
 
 async function loadAsset(assetId, orgId) {
   assertId(assetId, 'Asset not found.');
-  const asset = await Asset.findOne({ _id: assetId, orgId }).select('_id parentId').lean();
+  const asset = await Asset.findOne({ _id: assetId, orgId }).select('_id').lean();
   if (!asset) throw new Error('Asset not found.');
   return asset;
 }
@@ -114,7 +115,6 @@ const Query = {
 const Mutation = {
   async createProcedure(_, { input }, { orgId }) {
     const asset = await loadAsset(input.assetId, orgId);
-    if (!asset.parentId) throw new Error('A procedure belongs to a component.');
     const doc = await Procedure.create({
       orgId,
       assetId: asset._id,
@@ -138,7 +138,9 @@ const Mutation = {
   async deleteProcedure(_, { id }, { orgId }) {
     const existing = await loadOwned(id, orgId);
     const res = await Procedure.deleteOne({ _id: existing._id, orgId });
-    return res.deletedCount === 1;
+    if (res.deletedCount !== 1) return false;
+    await Log.deleteMany({ orgId, procedureId: existing._id });
+    return true;
   },
 };
 

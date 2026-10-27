@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Asset from '../../db/models/asset.js';
+import Log from '../../db/models/log.js';
 import Procedure from '../../db/models/procedure.js';
 import { buildUpdateDoc } from './_updateDoc.js';
 
@@ -194,6 +195,7 @@ const Mutation = {
     const res = await Asset.deleteOne({ _id: existing._id, orgId });
     if (res.deletedCount !== 1) return false;
     await Procedure.deleteMany({ orgId, assetId: existing._id });
+    await Log.deleteMany({ orgId, assetId: existing._id });
     return true;
   },
 };

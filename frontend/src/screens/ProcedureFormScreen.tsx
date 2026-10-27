@@ -1,17 +1,20 @@
 import * as React from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ActivityIndicator, Icon, Text } from 'react-native-paper';
-import { useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { useMutation, useQuery } from '@apollo/client';
+import { formatHumanDate } from '../components/inputs/DateInput';
 import ConfirmSheet from '../components/modals/ConfirmSheet';
 import { BackButton, NavBar, NavLink, SectionLabel } from '../components/ui';
 import {
   CREATE_PROCEDURE_MUTATION,
   DELETE_PROCEDURE_MUTATION,
+  PROCEDURE_LOGS_QUERY,
   PROCEDURE_QUERY,
   UPDATE_PROCEDURE_MUTATION,
 } from '../graphql/operations';
 import { colorsLight, fontFamily, radius } from '../theme/theme';
+import { formatCost, formatMeter } from '../utils/log';
 import { MoveDirection, moveItem } from '../utils/procedure';
 
 const TITLE_MAX = 200;
@@ -93,6 +96,25 @@ export default function ProcedureFormScreen({ navigation }: any) {
     fetchPolicy: 'cache-and-network',
   });
   const procedure = data?.procedure as ProcedureFields | null | undefined;
+
+  const { data: logsData, refetch: refetchLogs } = useQuery(PROCEDURE_LOGS_QUERY, {
+    variables: { procedureId: procedureId! },
+    skip: !isEdit || !procedureId,
+    fetchPolicy: 'cache-and-network',
+  });
+  const procedureLogs: {
+    id: string;
+    date?: string | null;
+    cost?: number | null;
+    meter?: { unit: string; value: number } | null;
+  }[] = logsData?.logs ?? [];
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isEdit || !procedureId) return;
+      refetchLogs();
+    }, [isEdit, procedureId, refetchLogs]),
+  );
 
   const [createProcedure, { error: createError }] = useMutation(CREATE_PROCEDURE_MUTATION);
   const [updateProcedure, { error: updateError }] = useMutation(UPDATE_PROCEDURE_MUTATION);
@@ -429,6 +451,37 @@ export default function ProcedureFormScreen({ navigation }: any) {
           </View>
         ) : null}
 
+        {isEdit && procedureId ? (
+          <>
+            <SectionLabel
+              action={{ label: 'Add', onPress: () => navigation.push('Log', { procedureId }) }}
+            >
+              Last done
+            </SectionLabel>
+            {procedureLogs[0] ? (
+              <View style={styles.group}>
+                <Pressable
+                  onPress={() => navigation.push('Log', { procedureId, id: procedureLogs[0].id })}
+                  style={styles.logRow}
+                >
+                  <Text style={styles.logLabel}>
+                    {[
+                      formatHumanDate(procedureLogs[0].date ?? ''),
+                      formatCost(procedureLogs[0].cost),
+                      formatMeter(procedureLogs[0].meter),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'Log'}
+                  </Text>
+                  <Icon source="chevron-right" size={18} color={colorsLight.textFaint} />
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={styles.emptyLogs}>Not logged yet.</Text>
+            )}
+          </>
+        ) : null}
+
         {saveError ? <Text style={styles.errorBody}>{saveError}</Text> : null}
         {deleteError ? <Text style={styles.errorBody}>{deleteError}</Text> : null}
 
@@ -456,8 +509,8 @@ export default function ProcedureFormScreen({ navigation }: any) {
         title="Delete procedure?"
         message={
           title.trim()
-            ? `Delete ${title.trim()}? This can't be undone.`
-            : "Delete this procedure? This can't be undone."
+            ? `Delete ${title.trim()} and its logs? This can't be undone.`
+            : "Delete this procedure and its logs? This can't be undone."
         }
         confirmLabel="Delete"
         destructive
@@ -556,6 +609,26 @@ const styles = StyleSheet.create({
   },
   specLabel: {
     flex: 1,
+  },
+  emptyLogs: {
+    marginHorizontal: 24,
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    color: colorsLight.textMuted,
+  },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  logLabel: {
+    flex: 1,
+    fontFamily: fontFamily.regular,
+    fontSize: 15,
+    color: colorsLight.text,
   },
   actions: {
     flexDirection: 'row',

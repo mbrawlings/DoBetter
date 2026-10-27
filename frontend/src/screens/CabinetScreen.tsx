@@ -135,7 +135,7 @@ export default function CabinetScreen({ onModeChange }: { onModeChange: (mode: A
     (navigation as any).navigate('Asset' as never);
   }
   function gotoAsset(id: string) {
-    (navigation as any).navigate('Asset' as never, { id } as never);
+    (navigation as any).navigate('AssetHub' as never, { id } as never);
   }
   function gotoAccount() {
     (navigation as any).navigate('Account' as never);

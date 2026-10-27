@@ -327,4 +327,61 @@ export const DELETE_PROCEDURE_MUTATION = gql`
   }
 `;
 
+const LOG_LIST_FIELDS = `
+  id
+  assetId
+  procedureId
+  date
+  cost
+  note
+  meter { unit value }
+  title
+`;
+
+export const PROCEDURE_LOGS_QUERY = gql`
+  query ProcedureLogs($procedureId: ID!) {
+    logs(procedureId: $procedureId) {
+      ${LOG_LIST_FIELDS}
+    }
+  }
+`;
+
+export const ASSET_LOGS_QUERY = gql`
+  query AssetLogs($assetIds: [ID!]!) {
+    logsForAssets(assetIds: $assetIds) {
+      ${LOG_LIST_FIELDS}
+    }
+  }
+`;
+
+export const LOG_QUERY = gql`
+  query Log($id: ID!) {
+    log(id: $id) {
+      ${LOG_LIST_FIELDS}
+      steps
+      parts { name quantity }
+      tools
+      specs { label value }
+    }
+  }
+`;
+
+export const CREATE_LOG_MUTATION = gql`
+  mutation CreateLog($input: LogInput!) {
+    createLog(input: $input) { id }
+  }
+`;
+
+export const UPDATE_LOG_MUTATION = gql`
+  mutation UpdateLog($id: ID!, $input: LogUpdateInput!) {
+    updateLog(id: $id, input: $input) { id }
+  }
+`;
+
+export const DELETE_LOG_MUTATION = gql`
+  mutation DeleteLog($id: ID!) {
+    deleteLog(id: $id)
+  }
+`;
+
 

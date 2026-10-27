@@ -29,6 +29,27 @@ export function realmLabel(realm: Realm): string {
   }
 }
 
+export function descendantIds(assetId: string, assets: Asset[]): string[] {
+  const children = new Map<string, string[]>();
+  for (const asset of assets) {
+    if (!asset.parentId) continue;
+    const list = children.get(asset.parentId) ?? [];
+    list.push(asset.id);
+    children.set(asset.parentId, list);
+  }
+  const ids = [assetId];
+  const seen = new Set<string>([assetId]);
+  const stack = [...(children.get(assetId) ?? [])];
+  while (stack.length) {
+    const id = stack.pop();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    stack.push(...(children.get(id) ?? []));
+  }
+  return ids;
+}
+
 export function blockedParentIds(assetId: string | undefined, assets: Asset[]): Set<string> {
   const blocked = new Set<string>();
   if (!assetId) return blocked;
