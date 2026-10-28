@@ -11,6 +11,7 @@ import {
 } from '../../utils/authHelpers.js';
 import { sendVerificationEmail } from '../../utils/email.js';
 import {
+  applyPushSubscription,
   normalizeNotificationSettings,
   normalizePushSubscription,
   webPushPublicKey as webPushPublicKeyFromEnv,
@@ -147,13 +148,7 @@ const Mutation = {
     const user = await requireUser(orgId);
     const nextSub = normalizePushSubscription(subscription);
     const prefs = normalizeNotificationSettings(settings);
-    const existing = user.pushSubscriptions.findIndex((sub) => sub.endpoint === nextSub.endpoint);
-    if (existing >= 0) {
-      user.pushSubscriptions[existing].p256dh = nextSub.p256dh;
-      user.pushSubscriptions[existing].auth = nextSub.auth;
-    } else {
-      user.pushSubscriptions.push(nextSub);
-    }
+    user.pushSubscriptions = applyPushSubscription(user.pushSubscriptions, nextSub);
     user.notificationPrefs = prefs;
     user.markModified('notificationPrefs');
     user.markModified('pushSubscriptions');

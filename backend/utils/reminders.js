@@ -185,6 +185,61 @@ export function normalizePushSubscription(input) {
   return { endpoint, p256dh, auth };
 }
 
+const APPLE_PUSH_HOST = 'web.push.apple.com';
+
+export function isApplePushEndpoint(endpoint) {
+  try {
+    return new URL(endpoint).hostname === APPLE_PUSH_HOST;
+  } catch {
+    return false;
+  }
+}
+
+function plainSubscription(sub) {
+  return {
+    endpoint: sub.endpoint,
+    p256dh: sub.p256dh,
+    auth: sub.auth,
+  };
+}
+
+// Apple is one slot per account. Any other host stays matched by exact endpoint.
+export function applyPushSubscription(existing, next) {
+  const subs = Array.isArray(existing) ? existing : [];
+  if (isApplePushEndpoint(next.endpoint)) {
+    return [
+      ...subs.filter((sub) => !isApplePushEndpoint(sub.endpoint)).map(plainSubscription),
+      plainSubscription(next),
+    ];
+  }
+  const index = subs.findIndex((sub) => sub.endpoint === next.endpoint);
+  if (index >= 0) {
+    return subs.map((sub, i) => (i === index ? plainSubscription(next) : plainSubscription(sub)));
+  }
+  return [...subs.map(plainSubscription), plainSubscription(next)];
+}
+
+// Send to every non-Apple subscription and only the last Apple entry (newest append).
+export function pushTargets(subscriptions) {
+  const subs = Array.isArray(subscriptions) ? subscriptions : [];
+  let lastApple = -1;
+  for (let i = 0; i < subs.length; i += 1) {
+    if (isApplePushEndpoint(subs[i]?.endpoint)) lastApple = i;
+  }
+  const deliver = [];
+  const extraAppleEndpoints = [];
+  subs.forEach((sub, i) => {
+    if (!sub?.endpoint) return;
+    if (!isApplePushEndpoint(sub.endpoint)) {
+      deliver.push(sub);
+      return;
+    }
+    if (i === lastApple) deliver.push(sub);
+    else extraAppleEndpoints.push(sub.endpoint);
+  });
+  return { deliver, extraAppleEndpoints };
+}
+
 function occurrenceForYear(month, day, year) {
   const safeDay = month === 2 && day === 29 && !isLeapYear(year) ? 28 : day;
   return { year, month, day: safeDay };

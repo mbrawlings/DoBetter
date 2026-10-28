@@ -2,7 +2,7 @@ import webpush from 'web-push';
 import User from '../db/models/User.js';
 import Person from '../db/models/person.js';
 import NotificationDelivery from '../db/models/notificationDelivery.js';
-import { dueReminders } from './reminders.js';
+import { dueReminders, isApplePushEndpoint, pushTargets } from './reminders.js';
 
 const DISPATCH_INTERVAL_MS = 5 * 60 * 1000;
 const PUSH_TTL_SECONDS = 12 * 60 * 60;
@@ -53,9 +53,11 @@ async function sendReminder(client, user, reminder) {
     tag: reminder.dedupeKey,
   });
 
+  const { deliver, extraAppleEndpoints } = pushTargets(user.pushSubscriptions);
   let delivered = false;
+  let appleDelivered = false;
   const stale = [];
-  for (const sub of user.pushSubscriptions ?? []) {
+  for (const sub of deliver) {
     try {
       await client.sendNotification(
         {
@@ -66,6 +68,7 @@ async function sendReminder(client, user, reminder) {
         { TTL: PUSH_TTL_SECONDS },
       );
       delivered = true;
+      if (isApplePushEndpoint(sub.endpoint)) appleDelivered = true;
     } catch (err) {
       const status = err?.statusCode;
       if (status === 404 || status === 410) {
@@ -76,10 +79,11 @@ async function sendReminder(client, user, reminder) {
     }
   }
 
-  if (stale.length) {
+  const drop = appleDelivered ? [...stale, ...extraAppleEndpoints] : stale;
+  if (drop.length) {
     await User.updateOne(
       { _id: user._id },
-      { $pull: { pushSubscriptions: { endpoint: { $in: stale } } } },
+      { $pull: { pushSubscriptions: { endpoint: { $in: drop } } } },
     );
   }
 
